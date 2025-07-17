@@ -495,13 +495,14 @@ export const GRNCSVUpload: React.FC<GRNCSVUploadProps> = ({
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {csvData.rows.slice(0, 5).map((row, index) => (
-                    <TableRow key={index}>
-                       {row.map((cell, cellIndex) => (
-                         <TableCell key={cellIndex}>{cell}</TableCell>
-                       ))}
+                   {csvData.rows.slice(0, 5).map((row, index) => (
+                     <TableRow key={index}>
+                        {row.map((cell, cellIndex) => (
+                          <TableCell key={cellIndex}>{cell}</TableCell>
+                        ))}
                      </TableRow>
-                </TableBody>
+                   ))}
+                 </TableBody>
               </Table>
               {csvData.rows.length > 5 && (
                 <div className="p-2 text-sm text-muted-foreground text-center border-t">
