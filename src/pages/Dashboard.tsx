@@ -1,4 +1,5 @@
 import { useQuery } from "@tanstack/react-query"
+import { useOrganization } from "@/contexts/OrganizationContext"
 import { useOrganizationData } from "@/hooks/useOrganizationData"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -7,35 +8,70 @@ import { ChartContainer, ChartTooltip, ChartTooltipContent, ChartLegend, ChartLe
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer, PieChart as RechartsPieChart, Pie, Cell, LineChart, Line, Area, AreaChart } from "recharts"
 
 const Dashboard = () => {
+  const { organization, isLoading: orgLoading, isSatguru } = useOrganization()
   const { getStockSummary, getGRNLog, getIssueLog } = useOrganizationData();
 
+  console.log('📊 Dashboard rendering - Org:', organization?.name || 'none', 'isSatguru:', isSatguru, 'orgLoading:', orgLoading)
+
+  // Show organization loading state
+  if (orgLoading) {
+    return (
+      <div className="p-6 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+          <p>Loading organization data...</p>
+        </div>
+      </div>
+    )
+  }
+
+  // Show if organization not found
+  if (!organization) {
+    return (
+      <div className="p-6 flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-destructive">Organization not found</p>
+          <p className="text-sm text-muted-foreground">Please contact support if this issue persists.</p>
+        </div>
+      </div>
+    )
+  }
+
   const { data: stockSummary } = useQuery({
-    queryKey: ['organization-stock-summary'],
+    queryKey: ['organization-stock-summary', organization.code, isSatguru],
+    enabled: !!organization,
     queryFn: async () => {
+      console.log('📊 Fetching stock summary for org:', organization.name, 'isSatguru:', isSatguru)
       const response = await getStockSummary();
       return response?.data || [];
     }
   })
 
   const { data: recentGRNs } = useQuery({
-    queryKey: ['organization-recent-grns'],
+    queryKey: ['organization-recent-grns', organization.code, isSatguru],
+    enabled: !!organization,
     queryFn: async () => {
+      console.log('📊 Fetching recent GRNs for org:', organization.name, 'isSatguru:', isSatguru)
       const response = await getGRNLog();
       return response?.data?.slice(0, 5) || [];
     }
   })
 
   const { data: recentIssues } = useQuery({
-    queryKey: ['organization-recent-issues'],
+    queryKey: ['organization-recent-issues', organization.code, isSatguru],
+    enabled: !!organization,
     queryFn: async () => {
+      console.log('📊 Fetching recent issues for org:', organization.name, 'isSatguru:', isSatguru)
       const response = await getIssueLog();
       return response?.data?.slice(0, 5) || [];
     }
   })
 
   const { data: stockMovements } = useQuery({
-    queryKey: ['organization-stock-movements'],
+    queryKey: ['organization-stock-movements', organization.code, isSatguru],
+    enabled: !!organization,
     queryFn: async () => {
+      console.log('📊 Fetching stock movements for org:', organization.name, 'isSatguru:', isSatguru)
       const [grnResponse, issueResponse] = await Promise.all([
         getGRNLog(),
         getIssueLog()
@@ -114,8 +150,13 @@ const Dashboard = () => {
   return (
     <div className="p-6 space-y-6">
       <div>
-        <h1 className="text-3xl font-bold">ERP Dashboard</h1>
+        <h1 className="text-3xl font-bold">ERP Dashboard - {organization.name}</h1>
         <p className="text-muted-foreground">Overview of your inventory management system</p>
+        <div className="mt-2">
+          <Badge variant={isSatguru ? "default" : "secondary"}>
+            {organization.code}
+          </Badge>
+        </div>
       </div>
 
       {/* Key Metrics */}

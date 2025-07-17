@@ -4,7 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 export const useOrganizationData = () => {
   const { getTableName, isSatguru, organization, isLoading } = useOrganization();
   
-  console.log('🏢 useOrganizationData called - Organization:', organization?.name, 'isSatguru:', isSatguru, 'isLoading:', isLoading);
+  console.log('🏢 useOrganizationData called - Organization:', organization?.name || 'none', 'isSatguru:', isSatguru, 'isLoading:', isLoading);
 
   return {
     getTableName,

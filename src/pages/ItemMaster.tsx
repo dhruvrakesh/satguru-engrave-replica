@@ -230,8 +230,13 @@ const ItemMaster = () => {
     <div className="p-6 space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-bold">Item Master</h1>
+          <h1 className="text-3xl font-bold">Item Master - {organization.name}</h1>
           <p className="text-muted-foreground">Manage your inventory items and bulk operations</p>
+          <div className="mt-2">
+            <Badge variant={isSatguru ? "default" : "secondary"}>
+              {organization.code}
+            </Badge>
+          </div>
         </div>
         
         <div className="flex gap-2">
