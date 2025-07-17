@@ -4483,6 +4483,45 @@ export type Database = {
         }
         Relationships: []
       }
+      user_jobs: {
+        Row: {
+          created_at: string | null
+          enhanced_prompt: string | null
+          error_message: string | null
+          id: string
+          model_url: string | null
+          progress: number | null
+          prompt: string
+          status: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          enhanced_prompt?: string | null
+          error_message?: string | null
+          id?: string
+          model_url?: string | null
+          progress?: number | null
+          prompt: string
+          status?: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          enhanced_prompt?: string | null
+          error_message?: string | null
+          id?: string
+          model_url?: string | null
+          progress?: number | null
+          prompt?: string
+          status?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       users: {
         Row: {
           created_at: string | null
