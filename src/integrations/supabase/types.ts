@@ -4616,6 +4616,10 @@ export type Database = {
           unit_id: string
         }[]
       }
+      ensure_admin_users_setup: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
       export_employee_master: {
         Args: { p_unit_id?: string }
         Returns: {

@@ -202,10 +202,17 @@ export const AuthPage = () => {
             </TabsContent>
           </Tabs>
           
-          <div className="mt-4 text-center text-sm text-muted-foreground">
-            <div>Admin emails:</div>
-            <div>DK Enterprises: info@dkenterprises.co.in</div>
-            <div>Satguru Engravures: info@satguruengravures.com</div>
+          <div className="mt-6 p-4 bg-muted rounded-lg">
+            <div className="text-center text-sm text-muted-foreground space-y-2">
+              <div className="font-semibold">Admin Accounts:</div>
+              <div className="space-y-1">
+                <div>🏢 DK Enterprises: <code className="bg-background px-1 rounded">info@dkenterprises.co.in</code></div>
+                <div>🎨 Satguru Engravures: <code className="bg-background px-1 rounded">info@satguruengravures.com</code></div>
+              </div>
+              <div className="text-xs text-muted-foreground/70 mt-2">
+                💡 If you're having trouble signing in, try creating an account first with the same email
+              </div>
+            </div>
           </div>
         </CardContent>
       </Card>
