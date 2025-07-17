@@ -1,193 +1,90 @@
 import { useOrganization } from '@/contexts/OrganizationContext';
 import { supabase } from '@/integrations/supabase/client';
+import { useToast } from './use-toast';
 
 export const useOrganizationData = () => {
-  const { getTableName, isSatguru, organization, isLoading } = useOrganization();
-  
-  console.log('🏢 useOrganizationData called - Organization:', organization?.name || 'none', 'isSatguru:', isSatguru, 'isLoading:', isLoading);
+  const { getTableName, isSatguru } = useOrganization();
+  const { toast } = useToast();
+
+  const handleError = (error: Error, context: string) => {
+    console.error(`Error in ${context}:`, error);
+    toast({
+      title: `Error fetching ${context}`,
+      description: error.message,
+      variant: "destructive"
+    });
+    throw error;
+  };
 
   return {
     getTableName,
     
-    // Categories queries
     getCategories: async () => {
-      const query = isSatguru 
-        ? supabase.from('satguru_categories' as any).select('*').order('category_name')
-        : supabase.from('categories').select('*').order('category_name');
-      
-      const { data, error } = await query;
-      if (error) throw error;
+      const { data, error } = await supabase.from(getTableName('categories')).select('*').order('category_name');
+      if (error) handleError(error, 'categories');
       return data || [];
     },
 
-    // Item master queries
     getItems: async () => {
       const query = isSatguru
-        ? supabase
-            .from('satguru_item_master' as any)
-            .select('*, satguru_categories!inner(category_name)')
-            .order('item_code')
-        : supabase
-            .from('item_master')
-            .select('*, categories!inner(category_name)')
-            .order('item_code');
+        ? supabase.from(getTableName('item_master')).select('*, satguru_categories(category_name)')
+        : supabase.from(getTableName('item_master')).select('*, categories(category_name)');
       
-      const { data, error } = await query;
-      if (error) throw error;
+      const { data, error } = await query.order('item_code');
+      if (error) handleError(error, 'items');
       return data || [];
     },
 
-    // Stock queries
     getStock: async () => {
-      const query = isSatguru
-        ? supabase.from('satguru_stock' as any).select('*').order('item_code')
-        : supabase.from('stock').select('*').order('item_code');
-      
-      const { data, error } = await query;
-      if (error) throw error;
+      const { data, error } = await supabase.from(getTableName('stock')).select('*').order('item_code');
+      if (error) handleError(error, 'stock');
       return data || [];
     },
-
-    // Stock summary view
+    
     getStockSummary: async () => {
-      const query = isSatguru
-        ? supabase.from('satguru_stock_summary' as any).select('*')
-        : supabase.from('stock_summary').select('*');
-      
-      const { data, error } = await query;
-      if (error) throw error;
+      const { data, error } = await supabase.from(getTableName('stock_summary')).select('*');
+      if (error) handleError(error, 'stock summary');
       return data || [];
     },
 
-    // GRN log queries
     getGRNLog: async () => {
-      const query = isSatguru
-        ? supabase.from('satguru_grn_log' as any).select('*').order('grn_date', { ascending: false })
-        : supabase.from('grn_log').select('*').order('grn_date', { ascending: false });
-      
-      const { data, error } = await query;
-      if (error) throw error;
+      const { data, error } = await supabase.from(getTableName('grn_log')).select('*, item_master(item_name)').order('created_at', { ascending: false });
+      if (error) handleError(error, 'grn log');
       return data || [];
     },
 
-    // Issue log queries
     getIssueLog: async () => {
-      const query = isSatguru
-        ? supabase.from('satguru_issue_log' as any).select('*').order('issue_date', { ascending: false })
-        : supabase.from('issue_log').select('*').order('issue_date', { ascending: false });
-      
-      const { data, error } = await query;
-      if (error) throw error;
+      const { data, error } = await supabase.from(getTableName('issue_log')).select('*, item_master(item_name)').order('created_at', { ascending: false });
+      if (error) handleError(error, 'issue log');
       return data || [];
     },
 
-    // Generic query method for raw SQL/RPC calls
-    executeQuery: async (query: string, params?: any) => {
-      // For now, return a simple error since execute_sql doesn't exist
-      throw new Error('Direct SQL execution not available');
+    insertCategory: async (categoryData: any) => {
+      const { data, error } = await supabase.from(getTableName('categories')).insert(categoryData).select();
+      if (error) handleError(error, 'inserting category');
+      return data;
     },
 
-    // Insert operations
-    insertCategory: async (data: any) => {
-      const query = isSatguru 
-        ? supabase.from('satguru_categories' as any).insert(data).select()
-        : supabase.from('categories').insert(data).select();
-      
-      const { data: result, error } = await query;
-      if (error) throw error;
-      return result;
+    insertItem: async (itemData: any) => {
+      const { data, error } = await supabase.from(getTableName('item_master')).insert(itemData).select();
+      if (error) handleError(error, 'inserting item');
+      return data;
+    },
+    
+    insertStock: async (stockData: any) => {
+      const { error } = await supabase.from(getTableName('stock')).upsert(stockData);
+      if (error) handleError(error, 'inserting stock');
     },
 
-    insertItem: async (data: any) => {
-      const query = isSatguru
-        ? supabase.from('satguru_item_master' as any).insert(data).select()
-        : supabase.from('item_master').insert(data).select();
-      
-      const { data: result, error } = await query;
-      if (error) throw error;
-      return result;
+    updateItem: async (itemId: string, itemData: any) => {
+      const { data, error } = await supabase.from(getTableName('item_master')).update(itemData).eq('id', itemId).select();
+      if (error) handleError(error, 'updating item');
+      return data;
     },
 
-    insertStock: async (data: any) => {
-      const query = isSatguru
-        ? supabase.from('satguru_stock' as any).insert(data).select()
-        : supabase.from('stock').insert(data).select();
-      
-      const { data: result, error } = await query;
-      if (error) throw error;
-      return result;
+    deleteItem: async (itemId: string) => {
+      const { error } = await supabase.from(getTableName('item_master')).delete().eq('id', itemId);
+      if (error) handleError(error, 'deleting item');
     },
-
-    insertGRN: async (data: any) => {
-      const query = isSatguru
-        ? supabase.from('satguru_grn_log' as any).insert(data).select()
-        : supabase.from('grn_log').insert(data).select();
-      
-      const { data: result, error } = await query;
-      if (error) throw error;
-      return result;
-    },
-
-    insertIssue: async (data: any) => {
-      const query = isSatguru
-        ? supabase.from('satguru_issue_log' as any).insert(data).select()
-        : supabase.from('issue_log').insert(data).select();
-      
-      const { data: result, error } = await query;
-      if (error) throw error;
-      return result;
-    },
-
-    // Update operations
-    updateCategory: async (id: string, data: any) => {
-      const query = isSatguru 
-        ? supabase.from('satguru_categories' as any).update(data).eq('id', id).select()
-        : supabase.from('categories').update(data).eq('id', id).select();
-      
-      const { data: result, error } = await query;
-      if (error) throw error;
-      return result;
-    },
-
-    updateItem: async (id: string, data: any) => {
-      const query = isSatguru
-        ? supabase.from('satguru_item_master' as any).update(data).eq('id', id).select()
-        : supabase.from('item_master').update(data).eq('id', id).select();
-      
-      const { data: result, error } = await query;
-      if (error) throw error;
-      return result;
-    },
-
-    updateStock: async (itemCode: string, data: any) => {
-      const query = isSatguru
-        ? supabase.from('satguru_stock' as any).update(data).eq('item_code', itemCode).select()
-        : supabase.from('stock').update(data).eq('item_code', itemCode).select();
-      
-      const { data: result, error } = await query;
-      if (error) throw error;
-      return result;
-    },
-
-    // Delete operations
-    deleteCategory: async (id: string) => {
-      const query = isSatguru 
-        ? supabase.from('satguru_categories' as any).delete().eq('id', id)
-        : supabase.from('categories').delete().eq('id', id);
-      
-      const { error } = await query;
-      if (error) throw error;
-      return true;
-    },
-
-    deleteItem: async (id: string) => {
-      const query = isSatguru
-        ? supabase.from('satguru_item_master' as any).delete().eq('id', id)
-        : supabase.from('item_master').delete().eq('id', id);
-      
-      const { error } = await query;
-      if (error) throw error;
-      return true;
-    }
   };
 };
