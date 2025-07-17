@@ -4238,6 +4238,7 @@ export type Database = {
           id: string
           item_code: string
           last_updated: string | null
+          opening_qty: number | null
           reserved_qty: number | null
         }
         Insert: {
@@ -4246,6 +4247,7 @@ export type Database = {
           id?: string
           item_code: string
           last_updated?: string | null
+          opening_qty?: number | null
           reserved_qty?: number | null
         }
         Update: {
@@ -4254,6 +4256,7 @@ export type Database = {
           id?: string
           item_code?: string
           last_updated?: string | null
+          opening_qty?: number | null
           reserved_qty?: number | null
         }
         Relationships: [

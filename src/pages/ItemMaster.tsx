@@ -74,7 +74,7 @@ const ItemMaster = () => {
       // First generate the item code
       const category = categories?.find(c => c.id === itemData.category_id)
       const { data: codeData, error: codeError } = await supabase
-        .rpc('generate_item_code', {
+        .rpc('satguru_generate_item_code', {
           category_name: category?.category_name || 'GEN',
           qualifier: itemData.qualifier || '',
           size_mm: itemData.size_mm || '',

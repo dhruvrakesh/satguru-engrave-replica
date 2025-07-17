@@ -86,17 +86,12 @@ const LegacyData = () => {
     }
   };
 
-  // Fetch recent analytics queries
+  // Fetch recent analytics queries - disabled for now
   const fetchRecentQueries = async () => {
     try {
-      const { data, error } = await supabase
-        .from('stock_analytics_queries')
-        .select('*')
-        .order('created_at', { ascending: false })
-        .limit(10);
-
-      if (error) throw error;
-      setRecentQueries(data || []);
+      // Temporarily disable this feature since the table doesn't exist
+      console.log('Recent queries feature disabled - table not implemented');
+      setRecentQueries([]);
     } catch (error) {
       console.error('Error fetching recent queries:', error);
     }

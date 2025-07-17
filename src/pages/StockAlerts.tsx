@@ -35,57 +35,55 @@ const StockAlerts = () => {
   const { data: stockData, isLoading, error, refetch } = useQuery({
     queryKey: ['stock-alerts'],
     queryFn: async () => {
-      const { data, error } = await getStockSummary()
-        .order('current_qty', { ascending: true })
-      
-      if (error) throw error
-      return data || []
+      const response = await getStockSummary();
+      const data = response?.data || [];
+      return data.filter(item => item && typeof item === 'object');
     }
   })
 
   const { data: categories } = useQuery({
     queryKey: ['categories'],
     queryFn: async () => {
-      const { data, error } = await getCategories()
-        .order('category_name')
-      
-      if (error) throw error
-      return data || []
+      const response = await getCategories();
+      return response?.data || [];
     }
   })
 
   const alertsData = useMemo(() => {
     if (!stockData) return { critical: [], low: [], medium: [], outOfStock: [] }
     
+    const safeStockData = stockData.filter(item => item && typeof item === 'object') as any[];
+    
     const alerts = {
-      critical: stockData.filter(item => 
-        (item.current_qty || 0) > 0 && 
-        (item.current_qty || 0) < 5 &&
-        (item.days_of_cover || 0) < 7
+      critical: safeStockData.filter(item => 
+        (item?.current_qty || 0) > 0 && 
+        (item?.current_qty || 0) < 5 &&
+        (item?.days_of_cover || 0) < 7
       ),
-      low: stockData.filter(item => 
-        (item.current_qty || 0) >= 5 && 
-        (item.current_qty || 0) < 10 &&
-        (item.days_of_cover || 0) < 14
+      low: safeStockData.filter(item => 
+        (item?.current_qty || 0) >= 5 && 
+        (item?.current_qty || 0) < 10 &&
+        (item?.days_of_cover || 0) < 14
       ),
-      medium: stockData.filter(item => 
-        (item.current_qty || 0) >= 10 && 
-        (item.current_qty || 0) < 50 &&
-        (item.days_of_cover || 0) < 30
+      medium: safeStockData.filter(item => 
+        (item?.current_qty || 0) >= 10 && 
+        (item?.current_qty || 0) < 50 &&
+        (item?.days_of_cover || 0) < 30
       ),
-      outOfStock: stockData.filter(item => (item.current_qty || 0) === 0)
+      outOfStock: safeStockData.filter(item => (item?.current_qty || 0) === 0)
     }
     
     return alerts
   }, [stockData])
 
   const filteredAlerts = useMemo(() => {
-    let filtered = stockData || []
+    const safeStockData = (stockData || []).filter(item => item && typeof item === 'object') as any[];
+    let filtered = safeStockData;
     
     if (searchTerm) {
       filtered = filtered.filter(item => 
-        item.item_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        item.item_code?.toLowerCase().includes(searchTerm.toLowerCase())
+        item?.item_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        item?.item_code?.toLowerCase().includes(searchTerm.toLowerCase())
       )
     }
     
