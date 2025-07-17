@@ -4562,6 +4562,10 @@ export type Database = {
         Args: { p_reading_id: string }
         Returns: boolean
       }
+      delete_job: {
+        Args: { p_job_id: string; p_user_id: string }
+        Returns: undefined
+      }
       delete_process_log: {
         Args: { log_id: string }
         Returns: undefined

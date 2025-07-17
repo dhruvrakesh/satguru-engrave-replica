@@ -6,10 +6,9 @@ import { Label } from '@/components/ui/label';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Progress } from '@/components/ui/progress';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { toast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { Upload, Download, AlertTriangle, CheckCircle, X, FileText, AlertCircle } from 'lucide-react';
+import { Upload, Download, AlertTriangle, CheckCircle, X } from 'lucide-react';
 import { downloadCSVTemplate } from '@/utils/templateGenerator';
 import { useOrganizationData } from '@/hooks/useOrganizationData';
 
@@ -151,13 +150,14 @@ export const IssueCSVUpload: React.FC<IssueCSVUploadProps> = ({
     const { data: existingItems, error } = await getItems();
     
     if (error) {
-      throw error;
+      console.error('Error fetching items:', error);
+      return [];
     }
 
-    if (!error && existingItems) {
+    if (existingItems) {
       const existingItemCodes = new Set(existingItems.filter(item => 
-        itemCodes.includes(item.item_code)
-      ).map(item => item.item_code));
+        itemCodes.includes((item as any).item_code)
+      ).map(item => (item as any).item_code));
       
       dataObjects.forEach((row, index) => {
         if (!existingItemCodes.has(row.item_code)) {
@@ -184,12 +184,13 @@ export const IssueCSVUpload: React.FC<IssueCSVUploadProps> = ({
     const { data: stockData, error } = await getStock();
     
     if (error) {
-      throw error;
+      console.error('Error fetching stock data:', error);
+      return [];
     }
 
-    if (!error && stockData) {
-      const stockItems = stockData.filter(item => itemCodes.includes(item.item_code));
-      const stockMap = new Map(stockItems.map(item => [item.item_code, item.current_qty]));
+    if (stockData) {
+      const stockItems = stockData.filter(item => itemCodes.includes((item as any).item_code));
+      const stockMap = new Map(stockItems.map(item => [(item as any).item_code, (item as any).current_qty]));
       
       dataObjects.forEach((row, index) => {
         const availableStock = stockMap.get(row.item_code) || 0;
@@ -349,9 +350,9 @@ export const IssueCSVUpload: React.FC<IssueCSVUploadProps> = ({
         setProgress(Math.round(((i + batch.length) / dataObjects.length) * 100));
       }
 
-      // Log the upload
+      // Log the upload - use type casting for dynamic table names
       try {
-        await supabase.from(getTableName('csv_upload_log')).insert({
+        await (supabase as any).from(getTableName('csv_upload_log')).insert({
           user_id: (await supabase.auth.getUser()).data.user?.id,
           file_name: file.name,
           file_type: 'issue',
@@ -498,33 +499,53 @@ export const IssueCSVUpload: React.FC<IssueCSVUploadProps> = ({
         )}
 
         {/* Upload Button */}
-        <Button 
-          onClick={processUpload} 
-          disabled={!csvData || validationErrors.length > 0 || isProcessing}
-          className="w-full"
-        >
-          {isProcessing ? "Processing..." : "Upload Issues"}
-        </Button>
+        {csvData && validationErrors.length === 0 && !uploadResult && (
+          <Button 
+            onClick={processUpload} 
+            disabled={isProcessing} 
+            className="w-full"
+          >
+            {isProcessing ? "Processing..." : "Upload Issue Data"}
+          </Button>
+        )}
 
         {/* Upload Results */}
         {uploadResult && (
-          <Alert>
-            <CheckCircle className="h-4 w-4" />
-            <AlertDescription>
-              <div className="space-y-2">
-                <p className="font-medium">Upload Results:</p>
-                <div className="text-sm">
-                  <div className="text-green-600">✓ {uploadResult.success} records uploaded successfully</div>
-                  {uploadResult.errors.length > 0 && (
-                    <div className="text-red-600">✗ {uploadResult.errors.length} records failed</div>
+          <div className="space-y-4">
+            <Alert className={uploadResult.errors.length === 0 ? "border-green-200 bg-green-50" : ""}>
+              <CheckCircle className="h-4 w-4" />
+              <AlertDescription>
+                Upload completed: {uploadResult.success} successful, {uploadResult.errors.length} failed out of {uploadResult.total} total rows
+              </AlertDescription>
+            </Alert>
+
+            {uploadResult.errors.length > 0 && (
+              <div>
+                <h4 className="font-medium mb-2 text-destructive">Errors ({uploadResult.errors.length})</h4>
+                <div className="max-h-40 overflow-y-auto border rounded-md p-2 bg-muted">
+                  {uploadResult.errors.slice(0, 10).map((error, index) => (
+                    <div key={index} className="text-sm text-destructive mb-1">
+                      Row {error.row}: {error.message}
+                    </div>
+                  ))}
+                  {uploadResult.errors.length > 10 && (
+                    <div className="text-sm text-muted-foreground">
+                      ... and {uploadResult.errors.length - 10} more errors
+                    </div>
                   )}
-                  <div className="text-muted-foreground">
-                    Total: {uploadResult.total} records processed
-                  </div>
                 </div>
               </div>
-            </AlertDescription>
-          </Alert>
+            )}
+
+            <Button onClick={() => {
+              setFile(null);
+              setCsvData(null);
+              setUploadResult(null);
+              setValidationErrors([]);
+            }} variant="outline" className="w-full">
+              Upload Another File
+            </Button>
+          </div>
         )}
       </CardContent>
     </Card>

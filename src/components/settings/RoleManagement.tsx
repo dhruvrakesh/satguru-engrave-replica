@@ -31,40 +31,38 @@ export const RoleManagement = () => {
 
   const fetchUsers = async () => {
     try {
-      const { data: userRoles, error } = await supabase
-        .from("user_roles")
-        .select(`
-          user_id,
-          role
-        `);
+      setLoading(true);
+      
+      // Fetch user profiles with roles directly from profiles table
+      const { data: profiles, error: profilesError } = await supabase
+        .from('profiles')
+        .select('id, email, full_name, created_at, role');
 
-      if (error) throw error;
+      if (profilesError) {
+        console.error('Error fetching profiles:', profilesError);
+        toast({
+          title: "Error",
+          description: "Failed to fetch user profiles",
+          variant: "destructive",
+        });
+        return;
+      }
 
-      // Get profiles for each user
-      const userIds = userRoles.map(ur => ur.user_id);
-      const { data: profiles } = await supabase
-        .from("profiles")
-        .select("id, full_name")
-        .in("id", userIds);
+      // Map profiles to the expected format
+      const combinedUsers = profiles?.map(profile => ({
+        id: profile.id,
+        email: profile.email,
+        full_name: profile.full_name,
+        role: profile.role || 'user',
+        created_at: profile.created_at
+      })) || [];
 
-      // Combine user roles with profiles
-      const processedUsers: UserWithRole[] = userRoles.map(ur => {
-        const profile = profiles?.find(p => p.id === ur.user_id);
-        return {
-          id: ur.user_id,
-          email: "email@example.com", // Would need admin query to get actual email
-          full_name: profile?.full_name || null,
-          role: ur.role,
-          created_at: new Date().toISOString()
-        };
-      });
-
-      setUsers(processedUsers);
+      setUsers(combinedUsers);
     } catch (error) {
-      console.error("Error fetching users:", error);
+      console.error('Error in fetchUsers:', error);
       toast({
         title: "Error",
-        description: "Failed to load user data",
+        description: "Failed to fetch users",
         variant: "destructive",
       });
     } finally {
@@ -75,14 +73,23 @@ export const RoleManagement = () => {
   const handleRoleChange = async (userId: string, newRole: "admin" | "user") => {
     try {
       const { error } = await supabase
-        .from("user_roles")
+        .from('profiles')
         .update({ role: newRole })
-        .eq("user_id", userId);
+        .eq('id', userId);
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error updating role:', error);
+        toast({
+          title: "Error",
+          description: "Failed to update user role",
+          variant: "destructive",
+        });
+        return;
+      }
 
-      setUsers(prev => 
-        prev.map(user => 
+      // Update local state
+      setUsers(prevUsers => 
+        prevUsers.map(user => 
           user.id === userId ? { ...user, role: newRole } : user
         )
       );
@@ -92,7 +99,7 @@ export const RoleManagement = () => {
         description: "User role updated successfully",
       });
     } catch (error) {
-      console.error("Error updating role:", error);
+      console.error('Error in handleRoleChange:', error);
       toast({
         title: "Error",
         description: "Failed to update user role",

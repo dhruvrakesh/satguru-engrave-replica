@@ -130,18 +130,22 @@ export const CSVUpload: React.FC<CSVUploadProps> = ({
         setProgress(Math.round(((i + batch.length) / dataObjects.length) * 100));
       }
 
-      // Log the upload
+      // Log the upload - use type casting to handle dynamic table names
       const { data: userData } = await supabase.auth.getUser();
       if (userData.user) {
-        await supabase.from(getTableName('csv_upload_log')).insert({
-          user_id: userData.user.id,
-          file_name: file.name,
-          file_type: 'opening_stock',
-          total_rows: dataObjects.length,
-          success_rows: totalSuccess,
-          error_rows: allErrors.length,
-          errors: allErrors as any
-        });
+        try {
+          await (supabase as any).from(getTableName('csv_upload_log')).insert({
+            user_id: userData.user.id,
+            file_name: file.name,
+            file_type: 'opening_stock',
+            total_rows: dataObjects.length,
+            success_rows: totalSuccess,
+            error_rows: allErrors.length,
+            errors: allErrors as any
+          });
+        } catch (logError) {
+          console.error('Error logging upload:', logError);
+        }
       }
 
       setUploadResult({

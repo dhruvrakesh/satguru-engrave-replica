@@ -6,7 +6,6 @@ import { Label } from '@/components/ui/label';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Progress } from '@/components/ui/progress';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { toast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { Upload, Download, AlertTriangle, CheckCircle, X, FileText, AlertCircle } from 'lucide-react';
@@ -160,13 +159,14 @@ export const GRNCSVUpload: React.FC<GRNCSVUploadProps> = ({
     const { data: existingItems, error } = await getItems();
     
     if (error) {
-      throw error;
+      console.error('Error fetching items:', error);
+      return [];
     }
 
-    if (!error && existingItems) {
+    if (existingItems) {
       const existingItemCodes = new Set(existingItems.filter(item => 
-        itemCodes.includes(item.item_code)
-      ).map(item => item.item_code));
+        itemCodes.includes((item as any).item_code)
+      ).map(item => (item as any).item_code));
       
       dataObjects.forEach((row, index) => {
         if (!existingItemCodes.has(row.item_code)) {
@@ -205,14 +205,15 @@ export const GRNCSVUpload: React.FC<GRNCSVUploadProps> = ({
     const { data: existingGRNs, error } = await getGRNLog();
     
     if (error) {
-      throw error;
+      console.error('Error fetching GRN log:', error);
+      return errors;
     }
 
-    if (!error && existingGRNs) {
+    if (existingGRNs) {
       const grnNumbers = [...new Set(dataObjects.map(row => row.grn_number))];
-      const filteredGRNs = existingGRNs.filter(grn => grnNumbers.includes(grn.grn_number));
+      const filteredGRNs = existingGRNs.filter(grn => grnNumbers.includes((grn as any).grn_number));
       const existingGRNItemCombinations = new Set(
-        filteredGRNs.map(grn => `${grn.grn_number}|${grn.item_code}`)
+        filteredGRNs.map(grn => `${(grn as any).grn_number}|${(grn as any).item_code}`)
       );
       
       dataObjects.forEach((row, index) => {
@@ -375,9 +376,9 @@ export const GRNCSVUpload: React.FC<GRNCSVUploadProps> = ({
         setProgress(Math.round(((i + batch.length) / dataObjects.length) * 100));
       }
 
-      // Log the upload
+      // Log the upload - use type casting for dynamic table names
       try {
-        await supabase.from(getTableName('csv_upload_log')).insert({
+        await (supabase as any).from(getTableName('csv_upload_log')).insert({
           user_id: (await supabase.auth.getUser()).data.user?.id,
           file_name: file.name,
           file_type: 'grn',
@@ -498,13 +499,12 @@ export const GRNCSVUpload: React.FC<GRNCSVUploadProps> = ({
                     <TableRow key={index}>
                       {row.map((cell, cellIndex) => (
                         <TableCell key={cellIndex}>{cell}</TableCell>
-                      ))}
-                    </TableRow>
-                  ))}
+                      )))}
+                     </TableRow>
                 </TableBody>
               </Table>
               {csvData.rows.length > 5 && (
-                <div className="p-2 text-sm text-muted-foreground text-center">
+                <div className="p-2 text-sm text-muted-foreground text-center border-t">
                   ... and {csvData.rows.length - 5} more rows
                 </div>
               )}
@@ -512,73 +512,65 @@ export const GRNCSVUpload: React.FC<GRNCSVUploadProps> = ({
           </div>
         )}
 
-        {/* Process Button */}
-        {csvData && validationErrors.length === 0 && (
-          <Button
-            onClick={processUpload}
-            disabled={isProcessing || validationErrors.length > 0}
-            className="w-full"
-          >
-            {isProcessing ? (
-              <>Processing... ({progress}%)</>
-            ) : (
-              <>
-                <Upload className="mr-2 h-4 w-4" />
-                Process {csvData.rows.length} GRN Records
-              </>
-            )}
-          </Button>
-        )}
-
-        {/* Progress Bar */}
+        {/* Upload Progress */}
         {isProcessing && (
           <div className="space-y-2">
-            <div className="flex justify-between text-sm">
-              <span>Processing GRN records...</span>
-              <span>{progress}%</span>
-            </div>
+            <Label>Upload Progress</Label>
             <Progress value={progress} className="w-full" />
+            <p className="text-sm text-muted-foreground">
+              Processing... {progress}%
+            </p>
           </div>
         )}
 
-        {/* Results */}
+        {/* Upload Button */}
+        {csvData && validationErrors.length === 0 && !uploadResult && (
+          <Button 
+            onClick={processUpload} 
+            disabled={isProcessing} 
+            className="w-full"
+          >
+            {isProcessing ? "Processing..." : "Upload GRN Data"}
+          </Button>
+        )}
+
+        {/* Upload Results */}
         {uploadResult && (
-          <Alert variant={uploadResult.errors.length > 0 ? "destructive" : "default"}>
-            <CheckCircle className="h-4 w-4" />
-            <AlertDescription>
-              <div className="space-y-2">
-                <p className="font-medium">Upload Summary:</p>
-                <div className="grid grid-cols-3 gap-4 text-sm">
-                  <div>
-                    <span className="font-medium">Total:</span> {uploadResult.total}
-                  </div>
-                  <div>
-                    <span className="font-medium text-green-600">Success:</span> {uploadResult.success}
-                  </div>
-                  <div>
-                    <span className="font-medium text-red-600">Errors:</span> {uploadResult.errors.length}
-                  </div>
-                </div>
-                {uploadResult.errors.length > 0 && (
-                  <div className="mt-2">
-                    <p className="font-medium text-red-600">Errors:</p>
-                    <div className="max-h-40 overflow-y-auto">
-                      {uploadResult.errors.slice(0, 5).map((error, index) => (
-                        <div key={index} className="text-sm">
-                          Row {error.row}: {error.message}
-                        </div>
-                      ))}
-                      {uploadResult.errors.length > 5 && (
-                        <div className="text-sm text-muted-foreground">
-                          ... and {uploadResult.errors.length - 5} more errors
-                        </div>
-                      )}
+          <div className="space-y-4">
+            <Alert className={uploadResult.errors.length === 0 ? "border-green-200 bg-green-50" : ""}>
+              <CheckCircle className="h-4 w-4" />
+              <AlertDescription>
+                Upload completed: {uploadResult.success} successful, {uploadResult.errors.length} failed out of {uploadResult.total} total rows
+              </AlertDescription>
+            </Alert>
+
+            {uploadResult.errors.length > 0 && (
+              <div>
+                <h4 className="font-medium mb-2 text-destructive">Errors ({uploadResult.errors.length})</h4>
+                <div className="max-h-40 overflow-y-auto border rounded-md p-2 bg-muted">
+                  {uploadResult.errors.slice(0, 10).map((error, index) => (
+                    <div key={index} className="text-sm text-destructive mb-1">
+                      Row {error.row}: {error.message}
                     </div>
-                  </div>
-                )}
+                  ))}
+                  {uploadResult.errors.length > 10 && (
+                    <div className="text-sm text-muted-foreground">
+                      ... and {uploadResult.errors.length - 10} more errors
+                    </div>
+                  )}
+                </div>
               </div>
-            </AlertDescription>
-          </Alert>
+            )}
+
+            <Button onClick={() => {
+              setFile(null);
+              setCsvData(null);
+              setUploadResult(null);
+              setValidationErrors([]);
+            }} variant="outline" className="w-full">
+              Upload Another File
+            </Button>
+          </div>
         )}
       </CardContent>
     </Card>
