@@ -497,9 +497,9 @@ export const GRNCSVUpload: React.FC<GRNCSVUploadProps> = ({
                 <TableBody>
                   {csvData.rows.slice(0, 5).map((row, index) => (
                     <TableRow key={index}>
-                      {row.map((cell, cellIndex) => (
-                        <TableCell key={cellIndex}>{cell}</TableCell>
-                      )))}
+                       {row.map((cell, cellIndex) => (
+                         <TableCell key={cellIndex}>{cell}</TableCell>
+                       ))}
                      </TableRow>
                 </TableBody>
               </Table>
