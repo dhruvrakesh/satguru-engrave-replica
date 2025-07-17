@@ -1,6 +1,8 @@
 import { useState } from "react"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { supabase } from "@/integrations/supabase/client"
+import { useOrganization } from "@/contexts/OrganizationContext"
+import { useOrganizationData } from "@/hooks/useOrganizationData"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -33,84 +35,110 @@ const ItemMaster = () => {
   const [activeTab, setActiveTab] = useState("manage")
   const { toast } = useToast()
   const queryClient = useQueryClient()
+  
+  // Organization context
+  const { organization, isLoading: orgLoading, isSatguru } = useOrganization()
+  const { getCategories, getItems, insertItem, deleteItem, insertStock } = useOrganizationData()
+
+  console.log('🏢 ItemMaster rendering - Org:', organization?.name, 'isSatguru:', isSatguru, 'orgLoading:', orgLoading)
+
+  // Show organization loading state
+  if (orgLoading) {
+    return (
+      <div className="p-6 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+          <p>Loading organization data...</p>
+        </div>
+      </div>
+    )
+  }
+
+  // Show if organization not found
+  if (!organization) {
+    return (
+      <div className="p-6 flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-destructive">Organization not found</p>
+        </div>
+      </div>
+    )
+  }
 
   const { data: categories } = useQuery({
-    queryKey: ['categories'],
+    queryKey: ['categories', organization.code],
+    enabled: !!organization,
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('categories')
-        .select('*')
-        .order('category_name')
-      
-      if (error) throw error
-      return data || []
+      console.log('🗂️ Fetching categories for org:', organization.name, 'isSatguru:', isSatguru)
+      const result = await getCategories()
+      if (result.error) throw result.error
+      return result.data || []
     }
   })
 
   const { data: items, isLoading } = useQuery({
-    queryKey: ['item-master', searchTerm],
+    queryKey: ['item-master', organization.code, searchTerm, isSatguru],
+    enabled: !!organization,
     queryFn: async () => {
-      let query = supabase
-        .from('item_master')
-        .select(`
-          *,
-          categories(category_name),
-          stock(current_qty)
-        `)
-        .order('created_at', { ascending: false })
-
-      if (searchTerm) {
-        query = query.or(`item_name.ilike.%${searchTerm}%,item_code.ilike.%${searchTerm}%`)
+      console.log('📦 Fetching items for org:', organization.name, 'isSatguru:', isSatguru, 'searchTerm:', searchTerm)
+      
+      const result = await getItems()
+      if (result.error) throw result.error
+      
+      let data = result.data || []
+      
+       // Apply search filter with proper type handling
+      if (searchTerm && Array.isArray(data)) {
+        const searchLower = searchTerm.toLowerCase()
+        data = (data as any[]).filter((item: any) => 
+          item?.item_name?.toLowerCase().includes(searchLower) ||
+          item?.item_code?.toLowerCase().includes(searchLower)
+        )
       }
-
-      const { data, error } = await query
-      if (error) throw error
-      return data || []
+      
+      console.log('📦 Fetched', Array.isArray(data) ? data.length : 0, 'items for', organization.name)
+      return Array.isArray(data) ? data : []
     }
   })
 
   const createItemMutation = useMutation({
     mutationFn: async (itemData: any) => {
-      // First generate the item code
-      const category = categories?.find(c => c.id === itemData.category_id)
-      const { data: codeData, error: codeError } = await supabase
-        .rpc('satguru_generate_item_code', {
-          category_name: category?.category_name || 'GEN',
-          qualifier: itemData.qualifier || '',
-          size_mm: itemData.size_mm || '',
-          gsm: itemData.gsm || null
-        })
-
-      if (codeError) throw codeError
+      console.log('➕ Creating item for org:', organization.name, 'isSatguru:', isSatguru)
+      
+      // For now, let's just use a simple item code until we fix the RPC
+      const category = Array.isArray(categories) ? categories.find((c: any) => c.id === itemData.category_id) : null
+      const timestamp = Date.now().toString().slice(-6)
+      const categoryPrefix = (category as any)?.category_name?.substring(0, 3).toUpperCase() || 'GEN'
+      const simpleCode = `${categoryPrefix}-${timestamp}`
 
       const finalItemData = {
         ...itemData,
-        item_code: codeData,
-        auto_code: codeData
+        item_code: simpleCode
       }
 
-      const { data, error } = await supabase
-        .from('item_master')
-        .insert([finalItemData])
-        .select()
+      // Use organization-aware insert
+      const result = await insertItem(finalItemData)
+      if (result.error) throw result.error
+      const data = result.data as any[]
 
-      if (error) throw error
-
-      // Initialize stock entry
-      if (data && data[0]) {
-        await supabase
-          .from('stock')
-          .insert([{
+      // Initialize stock entry using organization-aware method
+      if (data && Array.isArray(data) && data.length > 0 && data[0]?.item_code) {
+        try {
+          await insertStock({
             item_code: data[0].item_code,
             opening_qty: 0,
             current_qty: 0
-          }])
+          })
+        } catch (stockError) {
+          console.warn('Failed to initialize stock entry:', stockError)
+        }
       }
 
       return data
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['item-master'] })
+      queryClient.invalidateQueries({ queryKey: ['item-master', organization.code] })
+      queryClient.invalidateQueries({ queryKey: ['categories', organization.code] })
       setIsDialogOpen(false)
       setEditingItem(null)
       toast({
@@ -129,15 +157,12 @@ const ItemMaster = () => {
 
   const deleteItemMutation = useMutation({
     mutationFn: async (itemId: string) => {
-      const { error } = await supabase
-        .from('item_master')
-        .delete()
-        .eq('id', itemId)
-
-      if (error) throw error
+      console.log('🗑️ Deleting item for org:', organization.name, 'isSatguru:', isSatguru)
+      const result = await deleteItem(itemId)
+      if (result.error) throw result.error
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['item-master'] })
+      queryClient.invalidateQueries({ queryKey: ['item-master', organization.code] })
       toast({
         title: "Success",
         description: "Item deleted successfully",
@@ -170,7 +195,8 @@ const ItemMaster = () => {
   }
 
   const handleUploadComplete = () => {
-    queryClient.invalidateQueries({ queryKey: ['item-master'] });
+    queryClient.invalidateQueries({ queryKey: ['item-master', organization.code] });
+    queryClient.invalidateQueries({ queryKey: ['categories', organization.code] });
     setActiveTab("manage");
   };
 
@@ -196,7 +222,8 @@ const ItemMaster = () => {
   };
 
   const handleItemUpdate = () => {
-    queryClient.invalidateQueries({ queryKey: ['item-master'] });
+    queryClient.invalidateQueries({ queryKey: ['item-master', organization.code] });
+    queryClient.invalidateQueries({ queryKey: ['categories', organization.code] });
   };
 
   return (

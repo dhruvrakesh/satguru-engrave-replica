@@ -1,13 +1,17 @@
 
 import { useQuery } from "@tanstack/react-query"
 import { useOrganizationData } from "@/hooks/useOrganizationData"
+import { useOrganization } from "@/contexts/OrganizationContext"
 
 export const useItemsWithStock = () => {
+  const { organization, isLoading: orgLoading, isSatguru } = useOrganization()
   const { getItems, getStock } = useOrganizationData()
   
   return useQuery({
-    queryKey: ['items-with-stock'],
+    queryKey: ['items-with-stock', organization?.code, isSatguru],
+    enabled: !orgLoading && !!organization, // Wait for organization to load
     queryFn: async () => {
+      console.log('🔍 useItemsWithStock executing - Org:', organization?.name, 'isSatguru:', isSatguru);
       // Get items with category info
       const itemsResult = await getItems()
       const { data: items, error: itemsError } = itemsResult
