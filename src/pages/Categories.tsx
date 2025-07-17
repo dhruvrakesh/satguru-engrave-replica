@@ -1,6 +1,7 @@
 import { useState } from "react"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
-import { supabase } from "@/integrations/supabase/client"
+import { useOrganizationData } from "@/hooks/useOrganizationData"
+import { useOrganization } from "@/contexts/OrganizationContext"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
@@ -41,49 +42,32 @@ const Categories = () => {
   const [newCategory, setNewCategory] = useState({ name: '', description: '' })
   const { toast } = useToast()
   const queryClient = useQueryClient()
+  const { organization, isLoading: orgLoading } = useOrganization()
+  const { getCategories, getItems, insertCategory, updateCategory, deleteCategory } = useOrganizationData()
 
   const { data: categories, isLoading, error, refetch } = useQuery({
-    queryKey: ['categories-management'],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('categories')
-        .select('*')
-        .order('category_name')
-      
-      if (error) throw error
-      return data || []
-    }
+    queryKey: ['categories-management', organization?.id],
+    queryFn: getCategories,
+    enabled: !!organization && !orgLoading
   })
 
   const { data: itemCounts } = useQuery({
-    queryKey: ['category-item-counts'],
+    queryKey: ['category-item-counts', organization?.id],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('item_master')
-        .select('category_id, categories(category_name)')
-        .eq('status', 'active')
-      
-      if (error) throw error
-      
+      const items = await getItems()
       const counts: Record<string, number> = {}
-      data?.forEach(item => {
+      items?.forEach((item: any) => {
         const categoryName = item.categories?.category_name || 'Uncategorized'
         counts[categoryName] = (counts[categoryName] || 0) + 1
       })
-      
       return counts
-    }
+    },
+    enabled: !!organization && !orgLoading
   })
 
   const createCategoryMutation = useMutation({
     mutationFn: async (categoryData: { category_name: string, description?: string }) => {
-      const { data, error } = await supabase
-        .from('categories')
-        .insert(categoryData)
-        .select()
-
-      if (error) throw error
-      return data
+      return await insertCategory(categoryData)
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['categories-management'] })
@@ -106,14 +90,7 @@ const Categories = () => {
 
   const updateCategoryMutation = useMutation({
     mutationFn: async ({ id, categoryData }: { id: string, categoryData: { category_name: string, description?: string } }) => {
-      const { data, error } = await supabase
-        .from('categories')
-        .update(categoryData)
-        .eq('id', id)
-        .select()
-
-      if (error) throw error
-      return data
+      return await updateCategory(id, categoryData)
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['categories-management'] })
@@ -134,25 +111,15 @@ const Categories = () => {
 
   const deleteCategoryMutation = useMutation({
     mutationFn: async (categoryId: string) => {
-      // Check if category has items
-      const { data: items, error: itemError } = await supabase
-        .from('item_master')
-        .select('id')
-        .eq('category_id', categoryId)
-        .limit(1)
-
-      if (itemError) throw itemError
+      // Check if category has items first
+      const items = await getItems()
+      const categoryItems = items?.filter((item: any) => item.category_id === categoryId)
       
-      if (items && items.length > 0) {
+      if (categoryItems && categoryItems.length > 0) {
         throw new Error('Cannot delete category that has items. Please reassign items first.')
       }
 
-      const { error } = await supabase
-        .from('categories')
-        .delete()
-        .eq('id', categoryId)
-
-      if (error) throw error
+      return await deleteCategory(categoryId)
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['categories-management'] })
@@ -214,6 +181,30 @@ const Categories = () => {
     }
   }
 
+  if (orgLoading) {
+    return (
+      <div className="p-6">
+        <div className="flex items-center justify-center">
+          <RefreshCw className="h-4 w-4 animate-spin mr-2" />
+          Loading organization...
+        </div>
+      </div>
+    )
+  }
+
+  if (!organization) {
+    return (
+      <div className="p-6">
+        <Alert variant="destructive">
+          <AlertTriangle className="h-4 w-4" />
+          <AlertDescription>
+            No organization found. Please contact administrator.
+          </AlertDescription>
+        </Alert>
+      </div>
+    )
+  }
+
   if (error) {
     return (
       <div className="p-6">
@@ -236,7 +227,9 @@ const Categories = () => {
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-3xl font-bold">Categories Management</h1>
-          <p className="text-muted-foreground">Manage item categories and their organization</p>
+          <p className="text-muted-foreground">
+            Manage item categories for {organization.name}
+          </p>
         </div>
         <div className="flex gap-2">
           <Button variant="outline" onClick={() => refetch()}>

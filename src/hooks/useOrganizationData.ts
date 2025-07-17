@@ -10,25 +10,31 @@ export const useOrganizationData = () => {
     getTableName,
     
     // Categories queries
-    getCategories: () => {
-      if (isSatguru) {
-        return supabase.from('satguru_categories' as any).select('*').order('category_name');
-      }
-      return supabase.from('categories').select('*').order('category_name');
+    getCategories: async () => {
+      const query = isSatguru 
+        ? supabase.from('satguru_categories' as any).select('*').order('category_name')
+        : supabase.from('categories').select('*').order('category_name');
+      
+      const { data, error } = await query;
+      if (error) throw error;
+      return data || [];
     },
 
     // Item master queries
-    getItems: () => {
-      if (isSatguru) {
-        return supabase
-          .from('satguru_item_master' as any)
-          .select('*, satguru_categories!inner(category_name)')
-          .order('item_code');
-      }
-      return supabase
-        .from('item_master')
-        .select('*, categories!inner(category_name)')
-        .order('item_code');
+    getItems: async () => {
+      const query = isSatguru
+        ? supabase
+            .from('satguru_item_master' as any)
+            .select('*, satguru_categories!inner(category_name)')
+            .order('item_code')
+        : supabase
+            .from('item_master')
+            .select('*, categories!inner(category_name)')
+            .order('item_code');
+      
+      const { data, error } = await query;
+      if (error) throw error;
+      return data || [];
     },
 
     // Stock queries
@@ -70,11 +76,14 @@ export const useOrganizationData = () => {
     },
 
     // Insert operations
-    insertCategory: (data: any) => {
-      if (isSatguru) {
-        return supabase.from('satguru_categories' as any).insert(data);
-      }
-      return supabase.from('categories').insert(data);
+    insertCategory: async (data: any) => {
+      const query = isSatguru 
+        ? supabase.from('satguru_categories' as any).insert(data).select()
+        : supabase.from('categories').insert(data).select();
+      
+      const { data: result, error } = await query;
+      if (error) throw error;
+      return result;
     },
 
     insertItem: (data: any) => {
@@ -106,11 +115,14 @@ export const useOrganizationData = () => {
     },
 
     // Update operations
-    updateCategory: (id: string, data: any) => {
-      if (isSatguru) {
-        return supabase.from('satguru_categories' as any).update(data).eq('id', id);
-      }
-      return supabase.from('categories').update(data).eq('id', id);
+    updateCategory: async (id: string, data: any) => {
+      const query = isSatguru 
+        ? supabase.from('satguru_categories' as any).update(data).eq('id', id).select()
+        : supabase.from('categories').update(data).eq('id', id).select();
+      
+      const { data: result, error } = await query;
+      if (error) throw error;
+      return result;
     },
 
     updateItem: (id: string, data: any) => {
@@ -128,11 +140,14 @@ export const useOrganizationData = () => {
     },
 
     // Delete operations
-    deleteCategory: (id: string) => {
-      if (isSatguru) {
-        return supabase.from('satguru_categories' as any).delete().eq('id', id);
-      }
-      return supabase.from('categories').delete().eq('id', id);
+    deleteCategory: async (id: string) => {
+      const query = isSatguru 
+        ? supabase.from('satguru_categories' as any).delete().eq('id', id)
+        : supabase.from('categories').delete().eq('id', id);
+      
+      const { error } = await query;
+      if (error) throw error;
+      return true;
     },
 
     deleteItem: (id: string) => {
