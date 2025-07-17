@@ -95,32 +95,72 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, []);
 
   const signIn = async (email: string, password: string) => {
-    console.log('Attempting sign in for:', email);
-    const { error } = await supabase.auth.signInWithPassword({
-      email,
-      password
-    });
+    console.log('🔐 Attempting sign in for:', email);
     
-    if (error) {
-      console.error('Sign in error:', error);
-    } else {
-      console.log('Sign in successful for:', email);
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password
+      });
+      
+      if (error) {
+        console.error('❌ Sign in error:', {
+          message: error.message,
+          status: error.status,
+          code: error.code || 'unknown',
+          email: email
+        });
+        
+        // Provide more specific error messages
+        if (error.message.includes('Invalid login credentials')) {
+          console.error('💡 Suggestion: Check if user exists and password is correct');
+        }
+      } else {
+        console.log('✅ Sign in successful for:', email, {
+          user: data.user?.email,
+          session: !!data.session
+        });
+      }
+      
+      return { error };
+    } catch (err) {
+      console.error('🚨 Unexpected sign in error:', err);
+      return { error: err as any };
     }
-    
-    return { error };
   };
 
   const signUp = async (email: string, password: string) => {
+    console.log('📝 Attempting sign up for:', email);
     const redirectUrl = `${window.location.origin}/`;
     
-    const { error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        emailRedirectTo: redirectUrl
+    try {
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          emailRedirectTo: redirectUrl
+        }
+      });
+      
+      if (error) {
+        console.error('❌ Sign up error:', {
+          message: error.message,
+          status: error.status,
+          code: error.code || 'unknown',
+          email: email
+        });
+      } else {
+        console.log('✅ Sign up successful for:', email, {
+          user: data.user?.email,
+          needsConfirmation: !data.session
+        });
       }
-    });
-    return { error };
+      
+      return { error };
+    } catch (err) {
+      console.error('🚨 Unexpected sign up error:', err);
+      return { error: err as any };
+    }
   };
 
   const signOut = async () => {

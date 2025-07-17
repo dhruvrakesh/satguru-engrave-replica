@@ -18,18 +18,43 @@ export const AuthPage = () => {
     e.preventDefault();
     setIsLoading(true);
     
-    const { error } = await signIn(email, password);
-    
-    if (error) {
+    try {
+      console.log('🔐 Attempting sign in from AuthPage for:', email);
+      const { error } = await signIn(email, password);
+      
+      if (error) {
+        console.error('❌ Sign in failed in AuthPage:', error);
+        
+        let errorMessage = error.message;
+        let errorTitle = "Sign In Failed";
+        
+        // Provide more helpful error messages
+        if (error.message.includes('Invalid login credentials')) {
+          errorTitle = "Invalid Credentials";
+          errorMessage = "Please check your email and password. If you're a new user, try creating an account first.";
+        } else if (error.message.includes('Email not confirmed')) {
+          errorTitle = "Email Not Confirmed";
+          errorMessage = "Please check your email and click the confirmation link.";
+        }
+        
+        toast({
+          title: errorTitle,
+          description: errorMessage,
+          variant: "destructive"
+        });
+      } else {
+        console.log('✅ Sign in successful in AuthPage for:', email);
+        toast({
+          title: "Welcome back!",
+          description: "You have been signed in successfully."
+        });
+      }
+    } catch (err) {
+      console.error('🚨 Unexpected error in AuthPage sign in:', err);
       toast({
-        title: "Sign In Failed",
-        description: error.message,
+        title: "Something went wrong",
+        description: "An unexpected error occurred. Please try again.",
         variant: "destructive"
-      });
-    } else {
-      toast({
-        title: "Welcome back!",
-        description: "You have been signed in successfully."
       });
     }
     
@@ -40,18 +65,40 @@ export const AuthPage = () => {
     e.preventDefault();
     setIsLoading(true);
     
-    const { error } = await signUp(email, password);
-    
-    if (error) {
+    try {
+      console.log('📝 Attempting sign up from AuthPage for:', email);
+      const { error } = await signUp(email, password);
+      
+      if (error) {
+        console.error('❌ Sign up failed in AuthPage:', error);
+        
+        let errorMessage = error.message;
+        let errorTitle = "Sign Up Failed";
+        
+        // Provide more helpful error messages
+        if (error.message.includes('already registered')) {
+          errorTitle = "Account Already Exists";
+          errorMessage = "This email is already registered. Try signing in instead.";
+        }
+        
+        toast({
+          title: errorTitle,
+          description: errorMessage,
+          variant: "destructive"
+        });
+      } else {
+        console.log('✅ Sign up successful in AuthPage for:', email);
+        toast({
+          title: "Account Created",
+          description: "Please check your email to verify your account."
+        });
+      }
+    } catch (err) {
+      console.error('🚨 Unexpected error in AuthPage sign up:', err);
       toast({
-        title: "Sign Up Failed",
-        description: error.message,
+        title: "Something went wrong",
+        description: "An unexpected error occurred. Please try again.",
         variant: "destructive"
-      });
-    } else {
-      toast({
-        title: "Account Created",
-        description: "Please check your email to verify your account."
       });
     }
     
