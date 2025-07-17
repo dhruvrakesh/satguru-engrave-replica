@@ -38,35 +38,47 @@ export const useOrganizationData = () => {
     },
 
     // Stock queries
-    getStock: () => {
-      if (isSatguru) {
-        return supabase.from('satguru_stock' as any).select('*').order('item_code');
-      }
-      return supabase.from('stock').select('*').order('item_code');
+    getStock: async () => {
+      const query = isSatguru
+        ? supabase.from('satguru_stock' as any).select('*').order('item_code')
+        : supabase.from('stock').select('*').order('item_code');
+      
+      const { data, error } = await query;
+      if (error) throw error;
+      return data || [];
     },
 
     // Stock summary view
-    getStockSummary: () => {
-      if (isSatguru) {
-        return supabase.from('satguru_stock_summary' as any).select('*');
-      }
-      return supabase.from('stock_summary').select('*');
+    getStockSummary: async () => {
+      const query = isSatguru
+        ? supabase.from('satguru_stock_summary' as any).select('*')
+        : supabase.from('stock_summary').select('*');
+      
+      const { data, error } = await query;
+      if (error) throw error;
+      return data || [];
     },
 
     // GRN log queries
-    getGRNLog: () => {
-      if (isSatguru) {
-        return supabase.from('satguru_grn_log' as any).select('*').order('grn_date', { ascending: false });
-      }
-      return supabase.from('grn_log').select('*').order('grn_date', { ascending: false });
+    getGRNLog: async () => {
+      const query = isSatguru
+        ? supabase.from('satguru_grn_log' as any).select('*').order('grn_date', { ascending: false })
+        : supabase.from('grn_log').select('*').order('grn_date', { ascending: false });
+      
+      const { data, error } = await query;
+      if (error) throw error;
+      return data || [];
     },
 
     // Issue log queries
-    getIssueLog: () => {
-      if (isSatguru) {
-        return supabase.from('satguru_issue_log' as any).select('*').order('issue_date', { ascending: false });
-      }
-      return supabase.from('issue_log').select('*').order('issue_date', { ascending: false });
+    getIssueLog: async () => {
+      const query = isSatguru
+        ? supabase.from('satguru_issue_log' as any).select('*').order('issue_date', { ascending: false })
+        : supabase.from('issue_log').select('*').order('issue_date', { ascending: false });
+      
+      const { data, error } = await query;
+      if (error) throw error;
+      return data || [];
     },
 
     // Generic query method for raw SQL/RPC calls
@@ -86,32 +98,44 @@ export const useOrganizationData = () => {
       return result;
     },
 
-    insertItem: (data: any) => {
-      if (isSatguru) {
-        return supabase.from('satguru_item_master' as any).insert(data);
-      }
-      return supabase.from('item_master').insert(data);
+    insertItem: async (data: any) => {
+      const query = isSatguru
+        ? supabase.from('satguru_item_master' as any).insert(data).select()
+        : supabase.from('item_master').insert(data).select();
+      
+      const { data: result, error } = await query;
+      if (error) throw error;
+      return result;
     },
 
-    insertStock: (data: any) => {
-      if (isSatguru) {
-        return supabase.from('satguru_stock' as any).insert(data);
-      }
-      return supabase.from('stock').insert(data);
+    insertStock: async (data: any) => {
+      const query = isSatguru
+        ? supabase.from('satguru_stock' as any).insert(data).select()
+        : supabase.from('stock').insert(data).select();
+      
+      const { data: result, error } = await query;
+      if (error) throw error;
+      return result;
     },
 
-    insertGRN: (data: any) => {
-      if (isSatguru) {
-        return supabase.from('satguru_grn_log' as any).insert(data);
-      }
-      return supabase.from('grn_log').insert(data);
+    insertGRN: async (data: any) => {
+      const query = isSatguru
+        ? supabase.from('satguru_grn_log' as any).insert(data).select()
+        : supabase.from('grn_log').insert(data).select();
+      
+      const { data: result, error } = await query;
+      if (error) throw error;
+      return result;
     },
 
-    insertIssue: (data: any) => {
-      if (isSatguru) {
-        return supabase.from('satguru_issue_log' as any).insert(data);
-      }
-      return supabase.from('issue_log').insert(data);
+    insertIssue: async (data: any) => {
+      const query = isSatguru
+        ? supabase.from('satguru_issue_log' as any).insert(data).select()
+        : supabase.from('issue_log').insert(data).select();
+      
+      const { data: result, error } = await query;
+      if (error) throw error;
+      return result;
     },
 
     // Update operations
@@ -125,18 +149,24 @@ export const useOrganizationData = () => {
       return result;
     },
 
-    updateItem: (id: string, data: any) => {
-      if (isSatguru) {
-        return supabase.from('satguru_item_master' as any).update(data).eq('id', id);
-      }
-      return supabase.from('item_master').update(data).eq('id', id);
+    updateItem: async (id: string, data: any) => {
+      const query = isSatguru
+        ? supabase.from('satguru_item_master' as any).update(data).eq('id', id).select()
+        : supabase.from('item_master').update(data).eq('id', id).select();
+      
+      const { data: result, error } = await query;
+      if (error) throw error;
+      return result;
     },
 
-    updateStock: (itemCode: string, data: any) => {
-      if (isSatguru) {
-        return supabase.from('satguru_stock' as any).update(data).eq('item_code', itemCode);
-      }
-      return supabase.from('stock').update(data).eq('item_code', itemCode);
+    updateStock: async (itemCode: string, data: any) => {
+      const query = isSatguru
+        ? supabase.from('satguru_stock' as any).update(data).eq('item_code', itemCode).select()
+        : supabase.from('stock').update(data).eq('item_code', itemCode).select();
+      
+      const { data: result, error } = await query;
+      if (error) throw error;
+      return result;
     },
 
     // Delete operations
@@ -150,11 +180,14 @@ export const useOrganizationData = () => {
       return true;
     },
 
-    deleteItem: (id: string) => {
-      if (isSatguru) {
-        return supabase.from('satguru_item_master' as any).delete().eq('id', id);
-      }
-      return supabase.from('item_master').delete().eq('id', id);
+    deleteItem: async (id: string) => {
+      const query = isSatguru
+        ? supabase.from('satguru_item_master' as any).delete().eq('id', id)
+        : supabase.from('item_master').delete().eq('id', id);
+      
+      const { error } = await query;
+      if (error) throw error;
+      return true;
     }
   };
 };

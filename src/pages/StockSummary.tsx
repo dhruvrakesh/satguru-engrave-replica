@@ -42,20 +42,14 @@ const StockSummary = () => {
   const { data: stockData, isLoading, error, refetch } = useQuery({
     queryKey: ['stock-summary-detailed'],
     queryFn: async () => {
-      const { data, error } = await getStockSummary()
-      
-      if (error) throw error
-      return data || []
+      return await getStockSummary()
     }
   })
 
   const { data: categories } = useQuery({
     queryKey: ['categories'],
     queryFn: async () => {
-      const { data, error } = await getCategories()
-      
-      if (error) throw error
-      return data || []
+      return await getCategories()
     }
   })
 

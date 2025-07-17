@@ -13,20 +13,10 @@ export const useItemsWithStock = () => {
     queryFn: async () => {
       console.log('🔍 useItemsWithStock executing - Org:', organization?.name, 'isSatguru:', isSatguru);
       // Get items with category info
-      const itemsResult = await getItems()
-      const { data: items, error: itemsError } = itemsResult
-      if (itemsError) {
-        console.error('Error fetching items:', itemsError)
-        throw itemsError
-      }
+      const items = await getItems()
 
       // Get stock data
-      const stockResult = await getStock()
-      const { data: stockData, error: stockError } = stockResult
-      if (stockError) {
-        console.error('Error fetching stock:', stockError)
-        throw stockError
-      }
+      const stockData = await getStock()
 
       console.log('Fetched items:', items?.length || 0)
       console.log('Fetched stock data:', stockData?.length || 0)

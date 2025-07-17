@@ -147,12 +147,7 @@ export const IssueCSVUpload: React.FC<IssueCSVUploadProps> = ({
     const itemCodes = [...new Set(dataObjects.map(row => row.item_code))];
     
     // Check if all item codes exist
-    const { data: existingItems, error } = await getItems();
-    
-    if (error) {
-      console.error('Error fetching items:', error);
-      return [];
-    }
+    const existingItems = await getItems();
 
     if (existingItems) {
       const existingItemCodes = new Set(existingItems.filter(item => 
@@ -181,12 +176,7 @@ export const IssueCSVUpload: React.FC<IssueCSVUploadProps> = ({
     const itemCodes = [...new Set(dataObjects.map(row => row.item_code))];
     
     // Check stock levels
-    const { data: stockData, error } = await getStock();
-    
-    if (error) {
-      console.error('Error fetching stock data:', error);
-      return [];
-    }
+    const stockData = await getStock();
 
     if (stockData) {
       const stockItems = stockData.filter(item => itemCodes.includes((item as any).item_code));
@@ -196,7 +186,7 @@ export const IssueCSVUpload: React.FC<IssueCSVUploadProps> = ({
         const availableStock = stockMap.get(row.item_code) || 0;
         const reqQuantity = parseFloat(row.qty_issued);
         
-        if (availableStock < reqQuantity) {
+        if (typeof availableStock === 'number' && availableStock < reqQuantity) {
           errors.push({
             row: index + 2,
             field: 'qty_issued',
@@ -327,17 +317,8 @@ export const IssueCSVUpload: React.FC<IssueCSVUploadProps> = ({
             };
 
             // Insert issue record
-            const { error: insertError } = await insertIssue(issueData);
-
-            if (insertError) {
-              allErrors.push({
-                row: item.originalRowIndex,
-                message: `Error inserting issue: ${insertError.message}`,
-                data: item
-              });
-            } else {
-              totalSuccess++;
-            }
+            await insertIssue(issueData);
+            totalSuccess++;
           } catch (error) {
             allErrors.push({
               row: item.originalRowIndex,

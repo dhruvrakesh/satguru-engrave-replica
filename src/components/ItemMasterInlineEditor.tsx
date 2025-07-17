@@ -37,7 +37,7 @@ export const ItemMasterInlineEditor: React.FC<ItemMasterInlineEditorProps> = ({
     setIsSaving(true);
     try {
       // Update the item in the database
-      const { error } = await updateItem(item.id, {
+      await updateItem(item.id, {
         item_name: editedItem.item_name,
         category_id: editedItem.category_id,
         qualifier: editedItem.qualifier || null,
@@ -48,8 +48,6 @@ export const ItemMasterInlineEditor: React.FC<ItemMasterInlineEditorProps> = ({
         status: editedItem.status,
         updated_at: new Date().toISOString()
       });
-
-      if (error) throw error;
 
       toast({
         title: "Success",

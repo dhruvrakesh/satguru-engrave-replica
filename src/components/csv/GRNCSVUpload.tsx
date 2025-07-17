@@ -156,12 +156,7 @@ export const GRNCSVUpload: React.FC<GRNCSVUploadProps> = ({
     const itemCodes = [...new Set(dataObjects.map(row => row.item_code))];
     
     // Check if all item codes exist
-    const { data: existingItems, error } = await getItems();
-    
-    if (error) {
-      console.error('Error fetching items:', error);
-      return [];
-    }
+    const existingItems = await getItems();
 
     if (existingItems) {
       const existingItemCodes = new Set(existingItems.filter(item => 
@@ -202,12 +197,7 @@ export const GRNCSVUpload: React.FC<GRNCSVUploadProps> = ({
     });
 
     // Check for duplicates in database (grn_number + item_code combination)
-    const { data: existingGRNs, error } = await getGRNLog();
-    
-    if (error) {
-      console.error('Error fetching GRN log:', error);
-      return errors;
-    }
+    const existingGRNs = await getGRNLog();
 
     if (existingGRNs) {
       const grnNumbers = [...new Set(dataObjects.map(row => row.grn_number))];
@@ -353,17 +343,8 @@ export const GRNCSVUpload: React.FC<GRNCSVUploadProps> = ({
             };
 
             // Insert GRN record
-            const { error: insertError } = await insertGRN(grnData);
-
-            if (insertError) {
-              allErrors.push({
-                row: item.originalRowIndex,
-                message: `Error inserting GRN: ${insertError.message}`,
-                data: item
-              });
-            } else {
-              totalSuccess++;
-            }
+            await insertGRN(grnData);
+            totalSuccess++;
           } catch (error) {
             allErrors.push({
               row: item.originalRowIndex,

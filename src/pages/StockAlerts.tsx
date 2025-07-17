@@ -35,17 +35,15 @@ const StockAlerts = () => {
   const { data: stockData, isLoading, error, refetch } = useQuery({
     queryKey: ['stock-alerts'],
     queryFn: async () => {
-      const response = await getStockSummary();
-      const data = response?.data || [];
-      return data.filter(item => item && typeof item === 'object');
+      const data = await getStockSummary();
+      return (data || []).filter(item => item && typeof item === 'object');
     }
   })
 
   const { data: categories } = useQuery({
     queryKey: ['categories'],
     queryFn: async () => {
-      const response = await getCategories();
-      return response?.data || [];
+      return await getCategories();
     }
   })
 

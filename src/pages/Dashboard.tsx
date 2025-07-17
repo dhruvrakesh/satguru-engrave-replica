@@ -42,8 +42,7 @@ const Dashboard = () => {
     enabled: !!organization,
     queryFn: async () => {
       console.log('📊 Fetching stock summary for org:', organization.name, 'isSatguru:', isSatguru)
-      const response = await getStockSummary();
-      return response?.data || [];
+      return await getStockSummary();
     }
   })
 
@@ -52,8 +51,8 @@ const Dashboard = () => {
     enabled: !!organization,
     queryFn: async () => {
       console.log('📊 Fetching recent GRNs for org:', organization.name, 'isSatguru:', isSatguru)
-      const response = await getGRNLog();
-      return response?.data?.slice(0, 5) || [];
+      const data = await getGRNLog();
+      return (data || []).slice(0, 5);
     }
   })
 
@@ -62,8 +61,8 @@ const Dashboard = () => {
     enabled: !!organization,
     queryFn: async () => {
       console.log('📊 Fetching recent issues for org:', organization.name, 'isSatguru:', isSatguru)
-      const response = await getIssueLog();
-      return response?.data?.slice(0, 5) || [];
+      const data = await getIssueLog();
+      return (data || []).slice(0, 5);
     }
   })
 
@@ -72,13 +71,10 @@ const Dashboard = () => {
     enabled: !!organization,
     queryFn: async () => {
       console.log('📊 Fetching stock movements for org:', organization.name, 'isSatguru:', isSatguru)
-      const [grnResponse, issueResponse] = await Promise.all([
+      const [grnData, issueData] = await Promise.all([
         getGRNLog(),
         getIssueLog()
       ]);
-      
-      const grnData = grnResponse?.data || [];
-      const issueData = issueResponse?.data || [];
       
       // Group by date and sum quantities
       const movementMap = new Map()

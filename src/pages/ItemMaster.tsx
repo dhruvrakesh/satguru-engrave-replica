@@ -70,9 +70,7 @@ const ItemMaster = () => {
     enabled: !!organization,
     queryFn: async () => {
       console.log('🗂️ Fetching categories for org:', organization.name, 'isSatguru:', isSatguru)
-      const result = await getCategories()
-      if (result.error) throw result.error
-      return result.data || []
+      return await getCategories()
     }
   })
 
@@ -82,10 +80,7 @@ const ItemMaster = () => {
     queryFn: async () => {
       console.log('📦 Fetching items for org:', organization.name, 'isSatguru:', isSatguru, 'searchTerm:', searchTerm)
       
-      const result = await getItems()
-      if (result.error) throw result.error
-      
-      let data = result.data || []
+      let data = await getItems()
       
        // Apply search filter with proper type handling
       if (searchTerm && Array.isArray(data)) {
@@ -117,9 +112,7 @@ const ItemMaster = () => {
       }
 
       // Use organization-aware insert
-      const result = await insertItem(finalItemData)
-      if (result.error) throw result.error
-      const data = result.data as any[]
+      const data = await insertItem(finalItemData) as any[]
 
       // Initialize stock entry using organization-aware method
       if (data && Array.isArray(data) && data.length > 0 && data[0]?.item_code) {
@@ -158,8 +151,7 @@ const ItemMaster = () => {
   const deleteItemMutation = useMutation({
     mutationFn: async (itemId: string) => {
       console.log('🗑️ Deleting item for org:', organization.name, 'isSatguru:', isSatguru)
-      const result = await deleteItem(itemId)
-      if (result.error) throw result.error
+      await deleteItem(itemId)
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['item-master', organization.code] })

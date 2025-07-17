@@ -54,40 +54,30 @@ const StockAnalytics = () => {
   const { data: stockData, isLoading, error, refetch } = useQuery({
     queryKey: ['stock-analytics'],
     queryFn: async () => {
-      const { data, error } = await getStockSummary()
-      
-      if (error) throw error
-      return data || []
+      return await getStockSummary()
     }
   })
 
   const { data: categories } = useQuery({
     queryKey: ['categories-analytics'],
     queryFn: async () => {
-      const { data, error } = await getCategories()
-      
-      if (error) throw error
-      return data || []
+      return await getCategories()
     }
   })
 
   const { data: grnData } = useQuery({
     queryKey: ['grn-analytics'],
     queryFn: async () => {
-      const { data, error } = await getGRNLog().limit(30)
-      
-      if (error) throw error
-      return data || []
+      const data = await getGRNLog()
+      return (data || []).slice(0, 30)
     }
   })
 
   const { data: issueData } = useQuery({
     queryKey: ['issue-analytics'],
     queryFn: async () => {
-      const { data, error } = await getIssueLog().limit(30)
-      
-      if (error) throw error
-      return data || []
+      const data = await getIssueLog()
+      return (data || []).slice(0, 30)
     }
   })
 
