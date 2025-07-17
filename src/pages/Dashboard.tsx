@@ -114,7 +114,7 @@ const Dashboard = () => {
 
   // Process data for charts
   const categoryData = safeStockSummary.reduce((acc, item) => {
-    const category = item?.category_name || item?.categories?.category_name || 'Uncategorized'
+    const category = item?.category_name || (item?.categories ? item?.categories?.category_name : 'Uncategorized') || (item?.satguru_categories ? item?.satguru_categories?.category_name : 'Uncategorized')
     if (!acc[category]) {
       acc[category] = { name: category, value: 0, items: 0 }
     }
