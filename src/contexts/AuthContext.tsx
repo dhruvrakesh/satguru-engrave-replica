@@ -113,7 +113,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         
         // Provide more specific error messages
         if (error.message.includes('Invalid login credentials')) {
-          console.error('💡 Suggestion: Check if user exists and password is correct');
+          console.error('💡 Suggestion: Check if user exists and password is correct for email:', email);
         }
       } else {
         console.log('✅ Sign in successful for:', email, {

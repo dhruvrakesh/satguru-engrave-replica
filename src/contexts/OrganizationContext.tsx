@@ -62,7 +62,7 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
       if (!profile) {
         console.log('📝 Profile not found, attempting to create one...');
         
-        // Determine organization based on email domain
+        // Determine organization based on email domain  
         const isSatguru = user.email?.includes('@satguruengravures.com');
         const isDKEGL = user.email?.includes('@dkenterprises.co.in');
         
@@ -113,7 +113,7 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
         }
       }
 
-      // Profile exists - fetch organization details
+      // Profile exists - fetch organization details  
       if (profile?.organization_id) {
         console.log('🔍 Profile found, fetching organization details for ID:', profile.organization_id);
         
@@ -146,14 +146,14 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
 
   useEffect(() => {
     if (user?.email) {
-      console.log('Loading organization for user:', user.email);
+      console.log('🔄 User changed, loading organization for:', user.email);
       fetchUserOrganization();
     } else {
-      console.log('No authenticated user, clearing organization');
+      console.log('❌ No authenticated user, clearing organization');
       setOrganization(null);
       setIsLoading(false);
     }
-  }, [user]);
+  }, [user?.id]); // Use user.id instead of user to avoid unnecessary re-renders
 
   const switchOrganization = async (orgId: string) => {
     if (!user) return;

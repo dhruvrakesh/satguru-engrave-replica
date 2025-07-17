@@ -37,12 +37,19 @@ const Dashboard = () => {
     )
   }
 
-  const { data: stockSummary } = useQuery({
+  const { data: stockSummary, error: stockError } = useQuery({
     queryKey: ['organization-stock-summary', organization.code, isSatguru],
     enabled: !!organization,
     queryFn: async () => {
       console.log('📊 Fetching stock summary for org:', organization.name, 'isSatguru:', isSatguru)
-      return await getStockSummary();
+      try {
+        const result = await getStockSummary();
+        console.log('✅ Stock summary loaded:', result?.length || 0, 'items')
+        return result;
+      } catch (error) {
+        console.error('❌ Error fetching stock summary:', error)
+        throw error;
+      }
     }
   })
 
