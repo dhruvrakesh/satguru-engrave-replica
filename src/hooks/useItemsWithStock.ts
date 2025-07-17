@@ -25,14 +25,14 @@ export const useItemsWithStock = () => {
       const stockArray = Array.isArray(stockData) ? stockData : []
       return (items || []).map((item: any) => {
         const stock = stockArray.find((s: any) => s?.item_code === item?.item_code)
-        return {
-          item_code: item?.item_code,
-          item_name: item?.item_name,
-          uom: item?.uom,
-          category_name: item?.categories?.category_name || item?.satguru_categories?.category_name || 'Uncategorized',
-          current_qty: (stock && typeof stock === 'object' && 'current_qty' in stock) ? stock.current_qty : 0,
-          status: item?.status || 'active'
-        }
+         return {
+           item_code: item?.item_code,
+           item_name: item?.item_name,
+           uom: item?.uom,
+           category_name: item?.categories?.category_name || item?.satguru_categories?.category_name || 'Uncategorized',
+           current_qty: Number((stock && typeof stock === 'object' && 'current_qty' in stock) ? stock.current_qty : 0),
+           status: item?.status || 'active'
+         }
       })
     }
   })

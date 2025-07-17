@@ -187,7 +187,7 @@ export function ManualOpeningStockEntry() {
           {!isNewItem && selectedItemDetails && (
             <div className="p-3 bg-muted rounded-lg">
               <div className="text-sm space-y-1">
-                <div><span className="font-medium">Current Stock:</span> {selectedItemDetails.current_qty} {selectedItemDetails.uom}</div>
+                <div><span className="font-medium">Current Stock:</span> {Number(selectedItemDetails.current_qty) || 0} {selectedItemDetails.uom}</div>
                 <div><span className="font-medium">Category:</span> {selectedItemDetails.category_name}</div>
               </div>
             </div>
