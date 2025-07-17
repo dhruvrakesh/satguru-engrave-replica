@@ -5,6 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Label } from '@/components/ui/label';
 import { useAuth } from '@/contexts/AuthContext';
+import { useOrganization } from '@/contexts/OrganizationContext';
 import { toast } from '@/hooks/use-toast';
 import { Loader2 } from 'lucide-react';
 
@@ -13,6 +14,7 @@ export const AuthPage = () => {
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const { signIn, signUp } = useAuth();
+  const { organization } = useOrganization();
 
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -58,11 +60,14 @@ export const AuthPage = () => {
     setIsLoading(false);
   };
 
+  const adminEmail = organization?.code === 'SATGURU' ? 'info@satguruengravures.com' : 'info@dkenterprises.co.in';
+  const organizationName = organization?.name || 'Multi-Tenant ERP System';
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
-          <CardTitle className="text-2xl font-bold">Multi-Tenant ERP System</CardTitle>
+          <CardTitle className="text-2xl font-bold">{organizationName}</CardTitle>
           <CardDescription>
             Sign in to access your organization's inventory management system
           </CardDescription>
@@ -147,7 +152,7 @@ export const AuthPage = () => {
           </Tabs>
           
           <div className="mt-4 text-center text-sm text-muted-foreground">
-            Admin access: info@dkenterprises.co.in
+            Admin access: {adminEmail}
           </div>
         </CardContent>
       </Card>
