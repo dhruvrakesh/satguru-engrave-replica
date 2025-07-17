@@ -1184,6 +1184,13 @@ export type Database = {
             referencedRelation: "item_master"
             referencedColumns: ["item_code"]
           },
+          {
+            foreignKeyName: "daily_stock_summary_item_code_fkey"
+            columns: ["item_code"]
+            isOneToOne: false
+            referencedRelation: "stock_summary"
+            referencedColumns: ["item_code"]
+          },
         ]
       }
       deck_viscosity_readings: {
@@ -1847,6 +1854,13 @@ export type Database = {
             referencedRelation: "item_master"
             referencedColumns: ["item_code"]
           },
+          {
+            foreignKeyName: "grn_log_item_code_fkey"
+            columns: ["item_code"]
+            isOneToOne: false
+            referencedRelation: "stock_summary"
+            referencedColumns: ["item_code"]
+          },
         ]
       }
       investor_document_links: {
@@ -1972,6 +1986,13 @@ export type Database = {
             referencedRelation: "item_master"
             referencedColumns: ["item_code"]
           },
+          {
+            foreignKeyName: "issue_log_item_code_fkey"
+            columns: ["item_code"]
+            isOneToOne: false
+            referencedRelation: "stock_summary"
+            referencedColumns: ["item_code"]
+          },
         ]
       }
       item_master: {
@@ -2024,6 +2045,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "categories"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "item_master_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "stock_summary"
+            referencedColumns: ["category_id"]
           },
         ]
       }
@@ -4203,6 +4231,13 @@ export type Database = {
             referencedRelation: "item_master"
             referencedColumns: ["item_code"]
           },
+          {
+            foreignKeyName: "stock_item_code_fkey"
+            columns: ["item_code"]
+            isOneToOne: true
+            referencedRelation: "stock_summary"
+            referencedColumns: ["item_code"]
+          },
         ]
       }
       substrate_master_dkpkl: {
@@ -4454,6 +4489,25 @@ export type Database = {
           item_code: string | null
           item_name: string | null
           opening_qty: number | null
+          total_grn_qty: number | null
+          total_issued_qty: number | null
+        }
+        Relationships: []
+      }
+      stock_summary: {
+        Row: {
+          calculated_qty: number | null
+          category_id: string | null
+          category_name: string | null
+          current_qty: number | null
+          days_of_cover: number | null
+          issue_30d: number | null
+          item_code: string | null
+          item_id: string | null
+          item_name: string | null
+          last_updated: string | null
+          opening_qty: number | null
+          stock_validation_status: string | null
           total_grn_qty: number | null
           total_issued_qty: number | null
         }

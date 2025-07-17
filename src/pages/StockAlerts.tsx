@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react"
 import { useQuery } from "@tanstack/react-query"
-import { supabase } from "@/integrations/supabase/client"
+import { useOrganizationData } from "@/hooks/useOrganizationData"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
@@ -30,13 +30,12 @@ const StockAlerts = () => {
   const [searchTerm, setSearchTerm] = useState("")
   const [categoryFilter, setCategoryFilter] = useState("all")
   const [alertType, setAlertType] = useState("all")
+  const { getStockSummary, getCategories } = useOrganizationData()
 
   const { data: stockData, isLoading, error, refetch } = useQuery({
     queryKey: ['stock-alerts'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('stock_summary')
-        .select('*')
+      const { data, error } = await getStockSummary()
         .order('current_qty', { ascending: true })
       
       if (error) throw error
@@ -47,9 +46,7 @@ const StockAlerts = () => {
   const { data: categories } = useQuery({
     queryKey: ['categories'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('categories')
-        .select('*')
+      const { data, error } = await getCategories()
         .order('category_name')
       
       if (error) throw error

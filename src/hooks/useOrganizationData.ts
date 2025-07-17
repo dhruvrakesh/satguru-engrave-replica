@@ -5,6 +5,8 @@ export const useOrganizationData = () => {
   const { getTableName, isSatguru } = useOrganization();
 
   return {
+    getTableName,
+    
     // Categories queries
     getCategories: () => {
       if (isSatguru) {

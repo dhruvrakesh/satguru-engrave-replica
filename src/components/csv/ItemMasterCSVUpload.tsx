@@ -501,13 +501,13 @@ export const ItemMasterCSVUpload: React.FC<ItemMasterCSVUploadProps> = ({
       const { data: userData } = await supabase.auth.getUser();
       if (userData.user) {
         await supabase.from('csv_upload_log').insert({
-          user_id: userData.user.id,
+          uploaded_by: userData.user.id,
           file_name: file.name,
-          file_type: 'item_master',
+          upload_type: 'item_master',
           total_rows: dataObjects.length,
-          success_rows: totalSuccess,
-          error_rows: allErrors.length,
-          errors: allErrors as any
+          successful_rows: totalSuccess,
+          failed_rows: allErrors.length,
+          error_details: allErrors as any
         });
       }
 

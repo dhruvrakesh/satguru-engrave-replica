@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react"
 import { useQuery } from "@tanstack/react-query"
-import { supabase } from "@/integrations/supabase/client"
+import { useOrganizationData } from "@/hooks/useOrganizationData"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
@@ -49,13 +49,12 @@ const StockAnalytics = () => {
   const [searchTerm, setSearchTerm] = useState("")
   const [categoryFilter, setCategoryFilter] = useState("all")
   const [analyticsView, setAnalyticsView] = useState("overview")
+  const { getStockSummary, getCategories, getGRNLog, getIssueLog } = useOrganizationData()
 
   const { data: stockData, isLoading, error, refetch } = useQuery({
     queryKey: ['stock-analytics'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('stock_summary')
-        .select('*')
+      const { data, error } = await getStockSummary()
         .order('item_name')
       
       if (error) throw error
@@ -66,9 +65,7 @@ const StockAnalytics = () => {
   const { data: categories } = useQuery({
     queryKey: ['categories-analytics'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('categories')
-        .select('*')
+      const { data, error } = await getCategories()
         .order('category_name')
       
       if (error) throw error
@@ -79,9 +76,7 @@ const StockAnalytics = () => {
   const { data: grnData } = useQuery({
     queryKey: ['grn-analytics'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('grn_log')
-        .select('*')
+      const { data, error } = await getGRNLog()
         .order('date', { ascending: false })
         .limit(30)
       
@@ -93,9 +88,7 @@ const StockAnalytics = () => {
   const { data: issueData } = useQuery({
     queryKey: ['issue-analytics'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('issue_log')
-        .select('*')
+      const { data, error } = await getIssueLog()
         .order('date', { ascending: false })
         .limit(30)
       
