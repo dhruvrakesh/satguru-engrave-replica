@@ -40,25 +40,25 @@ export const useOrganizationData = () => {
     // Stock summary view
     getStockSummary: () => {
       if (isSatguru) {
-        return supabase.from('satguru_stock_summary' as any).select('*').order('item_code');
+        return supabase.from('satguru_stock_summary' as any).select('*');
       }
-      return supabase.from('stock_summary').select('*').order('item_code');
+      return supabase.from('stock_summary').select('*');
     },
 
     // GRN log queries
     getGRNLog: () => {
       if (isSatguru) {
-        return supabase.from('satguru_grn_log' as any).select('*').order('date', { ascending: false });
+        return supabase.from('satguru_grn_log' as any).select('*').order('grn_date', { ascending: false });
       }
-      return supabase.from('grn_log').select('*').order('date', { ascending: false });
+      return supabase.from('grn_log').select('*').order('grn_date', { ascending: false });
     },
 
     // Issue log queries
     getIssueLog: () => {
       if (isSatguru) {
-        return supabase.from('satguru_issue_log' as any).select('*').order('date', { ascending: false });
+        return supabase.from('satguru_issue_log' as any).select('*').order('issue_date', { ascending: false });
       }
-      return supabase.from('issue_log').select('*').order('date', { ascending: false });
+      return supabase.from('issue_log').select('*').order('issue_date', { ascending: false });
     },
 
     // Generic query method for raw SQL/RPC calls

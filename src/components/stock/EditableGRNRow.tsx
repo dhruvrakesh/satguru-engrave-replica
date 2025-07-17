@@ -20,14 +20,13 @@ import {
 
 interface GRNData {
   id: string;
-  date: string;
+  grn_date: string | null;
   grn_number: string;
   item_code: string;
   qty_received: number;
-  uom: string;
-  invoice_number: string | null;
-  vendor: string | null;
-  amount_inr: number | null;
+  supplier: string | null;
+  total_value: number | null;
+  unit_price: number | null;
   remarks: string | null;
 }
 
@@ -104,12 +103,12 @@ export const EditableGRNRow: React.FC<EditableGRNRowProps> = ({ grn }) => {
     }
 
     updateMutation.mutate({
-      date: editData.date,
+      grn_date: editData.grn_date,
       grn_number: editData.grn_number,
       qty_received: editData.qty_received,
-      invoice_number: editData.invoice_number,
-      vendor: editData.vendor,
-      amount_inr: editData.amount_inr,
+      supplier: editData.supplier,
+      total_value: editData.total_value,
+      unit_price: editData.unit_price,
       remarks: editData.remarks,
     });
   };
@@ -125,8 +124,8 @@ export const EditableGRNRow: React.FC<EditableGRNRowProps> = ({ grn }) => {
         <TableCell>
           <Input
             type="date"
-            value={editData.date}
-            onChange={(e) => setEditData({...editData, date: e.target.value})}
+            value={editData.grn_date || ''}
+            onChange={(e) => setEditData({...editData, grn_date: e.target.value})}
           />
         </TableCell>
         <TableCell>
@@ -143,24 +142,24 @@ export const EditableGRNRow: React.FC<EditableGRNRowProps> = ({ grn }) => {
             onChange={(e) => setEditData({...editData, qty_received: Number(e.target.value)})}
           />
         </TableCell>
-        <TableCell>{editData.uom}</TableCell>
         <TableCell>
           <Input
-            value={editData.invoice_number || ''}
-            onChange={(e) => setEditData({...editData, invoice_number: e.target.value})}
-          />
-        </TableCell>
-        <TableCell>
-          <Input
-            value={editData.vendor || ''}
-            onChange={(e) => setEditData({...editData, vendor: e.target.value})}
+            value={editData.supplier || ''}
+            onChange={(e) => setEditData({...editData, supplier: e.target.value})}
           />
         </TableCell>
         <TableCell>
           <Input
             type="number"
-            value={editData.amount_inr || ''}
-            onChange={(e) => setEditData({...editData, amount_inr: Number(e.target.value)})}
+            value={editData.unit_price || ''}
+            onChange={(e) => setEditData({...editData, unit_price: Number(e.target.value)})}
+          />
+        </TableCell>
+        <TableCell>
+          <Input
+            type="number"
+            value={editData.total_value || ''}
+            onChange={(e) => setEditData({...editData, total_value: Number(e.target.value)})}
           />
         </TableCell>
         <TableCell>
@@ -193,14 +192,13 @@ export const EditableGRNRow: React.FC<EditableGRNRowProps> = ({ grn }) => {
 
   return (
     <TableRow>
-      <TableCell>{grn.date}</TableCell>
+      <TableCell>{grn.grn_date}</TableCell>
       <TableCell>{grn.grn_number}</TableCell>
       <TableCell>{grn.item_code}</TableCell>
       <TableCell>{grn.qty_received}</TableCell>
-      <TableCell>{grn.uom}</TableCell>
-      <TableCell>{grn.invoice_number || '-'}</TableCell>
-      <TableCell>{grn.vendor || '-'}</TableCell>
-      <TableCell>{grn.amount_inr || '-'}</TableCell>
+      <TableCell>{grn.supplier || '-'}</TableCell>
+      <TableCell>{grn.unit_price || '-'}</TableCell>
+      <TableCell>{grn.total_value || '-'}</TableCell>
       <TableCell>{grn.remarks || '-'}</TableCell>
       <TableCell>
         <div className="flex gap-2">

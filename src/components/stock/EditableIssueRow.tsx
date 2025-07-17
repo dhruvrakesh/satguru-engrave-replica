@@ -20,11 +20,15 @@ import {
 
 interface IssueData {
   id: string;
-  date: string;
+  issue_date: string | null;
+  issue_number: string;
   item_code: string;
   qty_issued: number;
+  issued_to: string | null;
   purpose: string | null;
   remarks: string | null;
+  total_cost: number | null;
+  unit_cost: number | null;
 }
 
 interface EditableIssueRowProps {
@@ -113,7 +117,7 @@ export const EditableIssueRow: React.FC<EditableIssueRowProps> = ({
     }
 
     updateMutation.mutate({
-      date: editData.date,
+      issue_date: editData.issue_date,
       qty_issued: editData.qty_issued,
       purpose: editData.purpose,
       remarks: editData.remarks,
@@ -131,8 +135,8 @@ export const EditableIssueRow: React.FC<EditableIssueRowProps> = ({
         <TableCell>
           <Input
             type="date"
-            value={editData.date}
-            onChange={(e) => setEditData({...editData, date: e.target.value})}
+            value={editData.issue_date || ''}
+            onChange={(e) => setEditData({...editData, issue_date: e.target.value})}
           />
         </TableCell>
         <TableCell>{editData.item_code}</TableCell>
@@ -179,7 +183,7 @@ export const EditableIssueRow: React.FC<EditableIssueRowProps> = ({
 
   return (
     <TableRow>
-      <TableCell>{issue.date}</TableCell>
+      <TableCell>{issue.issue_date}</TableCell>
       <TableCell>{issue.item_code}</TableCell>
       <TableCell>{issue.qty_issued}</TableCell>
       <TableCell>{issue.purpose || '-'}</TableCell>

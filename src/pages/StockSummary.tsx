@@ -43,7 +43,6 @@ const StockSummary = () => {
     queryKey: ['stock-summary-detailed'],
     queryFn: async () => {
       const { data, error } = await getStockSummary()
-        .order('item_name')
       
       if (error) throw error
       return data || []
@@ -54,7 +53,6 @@ const StockSummary = () => {
     queryKey: ['categories'],
     queryFn: async () => {
       const { data, error } = await getCategories()
-        .order('category_name')
       
       if (error) throw error
       return data || []
@@ -62,26 +60,26 @@ const StockSummary = () => {
   })
 
   const filteredAndSortedData = useMemo(() => {
-    if (!stockData) return []
+    if (!stockData || !Array.isArray(stockData)) return []
     
-    let filtered = stockData.filter(item => {
-      const matchesSearch = item.item_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                           item.item_code?.toLowerCase().includes(searchTerm.toLowerCase())
+    let filtered = stockData.filter((item: any) => {
+      const matchesSearch = item?.item_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                           item?.item_code?.toLowerCase().includes(searchTerm.toLowerCase())
       
-      const matchesCategory = categoryFilter === "all" || item.category_name === categoryFilter
+      const matchesCategory = categoryFilter === "all" || item?.category_name === categoryFilter
       
       const matchesStockLevel = stockLevelFilter === "all" || 
-        (stockLevelFilter === "low" && (item.current_qty || 0) < 10) ||
-        (stockLevelFilter === "medium" && (item.current_qty || 0) >= 10 && (item.current_qty || 0) < 100) ||
-        (stockLevelFilter === "high" && (item.current_qty || 0) >= 100)
+        (stockLevelFilter === "low" && (item?.current_qty || 0) < 10) ||
+        (stockLevelFilter === "medium" && (item?.current_qty || 0) >= 10 && (item?.current_qty || 0) < 100) ||
+        (stockLevelFilter === "high" && (item?.current_qty || 0) >= 100)
       
       return matchesSearch && matchesCategory && matchesStockLevel
     })
 
     // Sort the filtered data
-    filtered.sort((a, b) => {
-      let aValue = a[sortField] || 0
-      let bValue = b[sortField] || 0
+    filtered.sort((a: any, b: any) => {
+      let aValue = a?.[sortField] || 0
+      let bValue = b?.[sortField] || 0
       
       if (typeof aValue === 'string') {
         aValue = aValue.toLowerCase()
@@ -126,18 +124,18 @@ const StockSummary = () => {
   }
 
   const exportToCSV = () => {
-    const csvData = filteredAndSortedData.map(item => ({
-      'Item Code': item.item_code,
-      'Item Name': item.item_name,
-      'Category': item.category_name,
-      'Opening Qty': item.opening_qty,
-      'Current Qty': item.current_qty,
-      'Calculated Qty': item.calculated_qty,
-      'Total GRN': item.total_grn_qty,
-      'Total Issued': item.total_issued_qty,
-       'Issue 30d': item.issue_30d,
-       'Days of Cover': item.days_of_cover,
-      'Stock Validation': item.stock_validation_status
+    const csvData = filteredAndSortedData.map((item: any) => ({
+      'Item Code': item?.item_code,
+      'Item Name': item?.item_name,
+      'Category': item?.category_name,
+      'Opening Qty': item?.opening_qty,
+      'Current Qty': item?.current_qty,
+      'Calculated Qty': item?.calculated_qty,
+      'Total GRN': item?.total_grn_qty,
+      'Total Issued': item?.total_issued_qty,
+       'Issue 30d': item?.issue_30d,
+       'Days of Cover': item?.days_of_cover,
+      'Stock Validation': item?.stock_validation_status
     }))
 
     const csvString = [
@@ -156,9 +154,9 @@ const StockSummary = () => {
 
   const stats = useMemo(() => {
     const totalItems = filteredAndSortedData.length
-    const lowStock = filteredAndSortedData.filter(item => (item.current_qty || 0) < 10).length
-    const totalValue = filteredAndSortedData.reduce((sum, item) => sum + (item.current_qty || 0), 0)
-    const zeroStock = filteredAndSortedData.filter(item => (item.current_qty || 0) === 0).length
+    const lowStock = filteredAndSortedData.filter((item: any) => (item?.current_qty || 0) < 10).length
+    const totalValue = filteredAndSortedData.reduce((sum: number, item: any) => sum + (item?.current_qty || 0), 0)
+    const zeroStock = filteredAndSortedData.filter((item: any) => (item?.current_qty || 0) === 0).length
     
     return { totalItems, lowStock, totalValue, zeroStock }
   }, [filteredAndSortedData])
@@ -277,9 +275,9 @@ const StockSummary = () => {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Categories</SelectItem>
-                  {categories?.map(cat => (
-                    <SelectItem key={cat.id} value={cat.category_name}>
-                      {cat.category_name}
+                  {categories?.map((cat: any) => (
+                    <SelectItem key={cat?.id} value={cat?.category_name}>
+                      {cat?.category_name}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -402,21 +400,21 @@ const StockSummary = () => {
                      </TableCell>
                    </TableRow>
                  ) : (
-                   filteredAndSortedData.map((item) => (
-                     <TableRow key={item.item_code}>
-                       <TableCell className="font-medium">{item.item_name}</TableCell>
-                       <TableCell className="font-mono text-sm">{item.item_code}</TableCell>
-                       <TableCell>
-                         <Badge variant="outline">{item.category_name || 'Uncategorized'}</Badge>
-                       </TableCell>
-                       <TableCell className="font-mono">{item.opening_qty || 0}</TableCell>
-                       <TableCell className="font-mono font-bold">{item.current_qty || 0}</TableCell>
-                       <TableCell className="font-mono text-green-600">{item.total_grn_qty || 0}</TableCell>
-                       <TableCell className="font-mono text-red-600">{item.total_issued_qty || 0}</TableCell>
-                        <TableCell className="font-mono text-orange-600">{item.issue_30d || 0}</TableCell>
-                        <TableCell>{getStockLevelBadge(item.current_qty || 0)}</TableCell>
-                       <TableCell>{getValidationBadge(item.stock_validation_status || 'OK')}</TableCell>
-                       <TableCell>{getDaysOfCoverBadge(item.days_of_cover)}</TableCell>
+                    filteredAndSortedData.map((item: any) => (
+                      <TableRow key={item?.item_code}>
+                        <TableCell className="font-medium">{item?.item_name}</TableCell>
+                        <TableCell className="font-mono text-sm">{item?.item_code}</TableCell>
+                        <TableCell>
+                          <Badge variant="outline">{item?.category_name || 'Uncategorized'}</Badge>
+                        </TableCell>
+                        <TableCell className="font-mono">{item?.opening_qty || 0}</TableCell>
+                        <TableCell className="font-mono font-bold">{item?.current_qty || 0}</TableCell>
+                        <TableCell className="font-mono text-green-600">{item?.total_grn_qty || 0}</TableCell>
+                        <TableCell className="font-mono text-red-600">{item?.total_issued_qty || 0}</TableCell>
+                         <TableCell className="font-mono text-orange-600">{item?.issue_30d || 0}</TableCell>
+                         <TableCell>{getStockLevelBadge(item?.current_qty || 0)}</TableCell>
+                        <TableCell>{getValidationBadge(item?.stock_validation_status || 'OK')}</TableCell>
+                        <TableCell>{getDaysOfCoverBadge(item?.days_of_cover)}</TableCell>
                      </TableRow>
                    ))
                  )}

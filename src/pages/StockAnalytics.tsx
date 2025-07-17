@@ -55,7 +55,6 @@ const StockAnalytics = () => {
     queryKey: ['stock-analytics'],
     queryFn: async () => {
       const { data, error } = await getStockSummary()
-        .order('item_name')
       
       if (error) throw error
       return data || []
@@ -66,7 +65,6 @@ const StockAnalytics = () => {
     queryKey: ['categories-analytics'],
     queryFn: async () => {
       const { data, error } = await getCategories()
-        .order('category_name')
       
       if (error) throw error
       return data || []
@@ -76,9 +74,7 @@ const StockAnalytics = () => {
   const { data: grnData } = useQuery({
     queryKey: ['grn-analytics'],
     queryFn: async () => {
-      const { data, error } = await getGRNLog()
-        .order('date', { ascending: false })
-        .limit(30)
+      const { data, error } = await getGRNLog().limit(30)
       
       if (error) throw error
       return data || []
@@ -88,9 +84,7 @@ const StockAnalytics = () => {
   const { data: issueData } = useQuery({
     queryKey: ['issue-analytics'],
     queryFn: async () => {
-      const { data, error } = await getIssueLog()
-        .order('date', { ascending: false })
-        .limit(30)
+      const { data, error } = await getIssueLog().limit(30)
       
       if (error) throw error
       return data || []
@@ -98,12 +92,12 @@ const StockAnalytics = () => {
   })
 
   const filteredStockData = useMemo(() => {
-    if (!stockData) return []
+    if (!stockData || !Array.isArray(stockData)) return []
     
-    return stockData.filter(item => {
-      const matchesSearch = item.item_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                           item.item_code?.toLowerCase().includes(searchTerm.toLowerCase())
-      const matchesCategory = categoryFilter === "all" || item.category_name === categoryFilter
+    return stockData.filter((item: any) => {
+      const matchesSearch = item?.item_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                           item?.item_code?.toLowerCase().includes(searchTerm.toLowerCase())
+      const matchesCategory = categoryFilter === "all" || item?.category_name === categoryFilter
       
       return matchesSearch && matchesCategory
     })
@@ -111,40 +105,40 @@ const StockAnalytics = () => {
 
   // Analytics calculations
   const analytics = useMemo(() => {
-    if (!stockData) return null
+    if (!stockData || !Array.isArray(stockData)) return null
 
     const totalItems = stockData.length
-    const lowStockItems = stockData.filter(item => (item.current_qty || 0) < 10).length
-    const outOfStockItems = stockData.filter(item => (item.current_qty || 0) === 0).length
-    const criticalStockItems = stockData.filter(item => 
-      item.days_of_cover && item.days_of_cover < 10 && item.days_of_cover !== 999999
+    const lowStockItems = stockData.filter((item: any) => (item?.current_qty || 0) < 10).length
+    const outOfStockItems = stockData.filter((item: any) => (item?.current_qty || 0) === 0).length
+    const criticalStockItems = stockData.filter((item: any) => 
+      item?.days_of_cover && item.days_of_cover < 10 && item.days_of_cover !== 999999
     ).length
 
-    const totalCurrentValue = stockData.reduce((sum, item) => sum + (item.current_qty || 0), 0)
-    const totalGRNValue = stockData.reduce((sum, item) => sum + (item.total_grn_qty || 0), 0)
-    const totalIssuedValue = stockData.reduce((sum, item) => sum + (item.total_issued_qty || 0), 0)
+    const totalCurrentValue = stockData.reduce((sum: number, item: any) => sum + (item?.current_qty || 0), 0)
+    const totalGRNValue = stockData.reduce((sum: number, item: any) => sum + (item?.total_grn_qty || 0), 0)
+    const totalIssuedValue = stockData.reduce((sum: number, item: any) => sum + (item?.total_issued_qty || 0), 0)
 
     // Validation discrepancies
-    const validationIssues = stockData.filter(item => 
-      item.stock_validation_status === 'MISMATCH'
+    const validationIssues = stockData.filter((item: any) => 
+      item?.stock_validation_status === 'MISMATCH'
     ).length
 
     // Stock movement trend (last 30 days)
-    const stockMovementData = stockData.map(item => ({
-      name: item.item_name?.substring(0, 20) + '...',
-      current: item.current_qty || 0,
-      grn_30d: item.total_grn_qty || 0,
-      issued_30d: item.issue_30d || 0,
-      turnover: ((item.issue_30d || 0) / (item.current_qty || 1)) * 100
+    const stockMovementData = stockData.map((item: any) => ({
+      name: item?.item_name?.substring(0, 20) + '...' || 'Unknown',
+      current: item?.current_qty || 0,
+      grn_30d: item?.total_grn_qty || 0,
+      issued_30d: item?.issue_30d || 0,
+      turnover: ((item?.issue_30d || 0) / (item?.current_qty || 1)) * 100
     })).slice(0, 10)
 
     // Category distribution
-    const categoryData = categories?.map(cat => {
-      const categoryItems = stockData.filter(item => item.category_name === cat.category_name)
+    const categoryData = categories?.map((cat: any) => {
+      const categoryItems = stockData.filter((item: any) => item?.category_name === cat?.category_name)
       return {
-        name: cat.category_name,
+        name: cat?.category_name || 'Unknown',
         count: categoryItems.length,
-        value: categoryItems.reduce((sum, item) => sum + (item.current_qty || 0), 0)
+        value: categoryItems.reduce((sum: number, item: any) => sum + (item?.current_qty || 0), 0)
       }
     }) || []
 
@@ -354,11 +348,11 @@ const StockAnalytics = () => {
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="all">All Categories</SelectItem>
-                      {categories?.map(cat => (
-                        <SelectItem key={cat.id} value={cat.category_name}>
-                          {cat.category_name}
-                        </SelectItem>
-                      ))}
+                       {categories?.map((cat: any) => (
+                         <SelectItem key={cat?.id} value={cat?.category_name}>
+                           {cat?.category_name}
+                         </SelectItem>
+                       ))}
                     </SelectContent>
                   </Select>
                 </div>
@@ -384,17 +378,17 @@ const StockAnalytics = () => {
                         </TableRow>
                       ) : (
                         filteredStockData
-                          .filter(item => item.stock_validation_status === 'MISMATCH')
-                          .map((item) => (
-                            <TableRow key={item.item_code}>
-                              <TableCell className="font-medium">{item.item_name}</TableCell>
+                          .filter((item: any) => item?.stock_validation_status === 'MISMATCH')
+                          .map((item: any) => (
+                            <TableRow key={item?.item_code}>
+                              <TableCell className="font-medium">{item?.item_name}</TableCell>
                               <TableCell>
-                                <Badge variant="outline">{item.category_name || 'Uncategorized'}</Badge>
+                                <Badge variant="outline">{item?.category_name || 'Uncategorized'}</Badge>
                               </TableCell>
-                              <TableCell className="font-mono">{item.current_qty || 0}</TableCell>
-                              <TableCell className="font-mono">{item.calculated_qty || 0}</TableCell>
+                              <TableCell className="font-mono">{item?.current_qty || 0}</TableCell>
+                              <TableCell className="font-mono">{item?.calculated_qty || 0}</TableCell>
                               <TableCell className="font-mono text-red-600">
-                                {((item.current_qty || 0) - (item.calculated_qty || 0))}
+                                {((item?.current_qty || 0) - (item?.calculated_qty || 0))}
                               </TableCell>
                               <TableCell>
                                 <Badge variant="destructive">Mismatch</Badge>
