@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query"
-import { supabase } from "@/integrations/supabase/client"
+import { useOrganizationData } from "@/hooks/useOrganizationData"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Package, TrendingUp, AlertTriangle, ShoppingCart, BarChart3, PieChart } from "lucide-react"
@@ -7,78 +7,50 @@ import { ChartContainer, ChartTooltip, ChartTooltipContent, ChartLegend, ChartLe
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer, PieChart as RechartsPieChart, Pie, Cell, LineChart, Line, Area, AreaChart } from "recharts"
 
 const Dashboard = () => {
+  const { getStockSummary, getGRNLog, getIssueLog } = useOrganizationData();
+
   const { data: stockSummary } = useQuery({
-    queryKey: ['stock-summary'],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('stock_summary')
-        .select('*')
-        .order('current_qty', { ascending: true })
-      
-      if (error) throw error
-      return data || []
-    }
+    queryKey: ['organization-stock-summary'],
+    queryFn: getStockSummary
   })
 
   const { data: recentGRNs } = useQuery({
-    queryKey: ['recent-grns'],
+    queryKey: ['organization-recent-grns'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('grn_log')
-        .select('*, item_master(item_name)')
-        .order('created_at', { ascending: false })
-        .limit(5)
-      
-      if (error) throw error
-      return data || []
+      const data = await getGRNLog();
+      return data?.slice(0, 5) || [];
     }
   })
 
   const { data: recentIssues } = useQuery({
-    queryKey: ['recent-issues'],
+    queryKey: ['organization-recent-issues'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('issue_log')
-        .select('*, item_master(item_name)')
-        .order('created_at', { ascending: false })
-        .limit(5)
-      
-      if (error) throw error
-      return data || []
+      const data = await getIssueLog();
+      return data?.slice(0, 5) || [];
     }
   })
 
   const { data: stockMovements } = useQuery({
-    queryKey: ['stock-movements'],
+    queryKey: ['organization-stock-movements'],
     queryFn: async () => {
       const [grnData, issueData] = await Promise.all([
-        supabase
-          .from('grn_log')
-          .select('date, qty_received')
-          .order('date', { ascending: true })
-          .limit(30),
-        supabase
-          .from('issue_log')
-          .select('date, qty_issued')
-          .order('date', { ascending: true })
-          .limit(30)
-      ])
-      
-      if (grnData.error || issueData.error) throw grnData.error || issueData.error
+        getGRNLog(),
+        getIssueLog()
+      ]);
       
       // Group by date and sum quantities
       const movementMap = new Map()
       
-      grnData.data?.forEach(item => {
-        const date = item.date
+      grnData?.slice(0, 30).forEach(item => {
+        const date = item.grn_date || item.date
         if (!movementMap.has(date)) {
           movementMap.set(date, { date, grn: 0, issues: 0 })
         }
         movementMap.get(date).grn += item.qty_received || 0
       })
       
-      issueData.data?.forEach(item => {
-        const date = item.date
+      issueData?.slice(0, 30).forEach(item => {
+        const date = item.issue_date || item.date
         if (!movementMap.has(date)) {
           movementMap.set(date, { date, grn: 0, issues: 0 })
         }

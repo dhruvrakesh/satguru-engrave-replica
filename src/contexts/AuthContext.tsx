@@ -28,16 +28,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [isAdmin, setIsAdmin] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
-  const checkAdminRole = async (userId: string) => {
+  const checkAdminRole = async (userEmail: string | undefined) => {
     try {
-      const { data: roles } = await supabase
-        .from('user_roles')
-        .select('role')
-        .eq('user_id', userId)
-        .eq('role', 'admin')
-        .maybeSingle();
-      
-      setIsAdmin(!!roles);
+      // Use the updated admin check function that supports both organizations
+      setIsAdmin(userEmail === 'info@dkenterprises.co.in' || userEmail === 'info@satguruengravures.com');
     } catch (error) {
       console.error('Error checking admin role:', error);
       setIsAdmin(false);
@@ -52,8 +46,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setUser(session?.user ?? null);
         
         if (session?.user) {
-          // Defer admin check to avoid deadlock
-          setTimeout(() => checkAdminRole(session.user.id), 0);
+          // Check admin role based on email
+          setTimeout(() => checkAdminRole(session.user.email), 0);
         } else {
           setIsAdmin(false);
         }
@@ -68,7 +62,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setUser(session?.user ?? null);
       
       if (session?.user) {
-        checkAdminRole(session.user.id);
+        checkAdminRole(session.user.email);
       } else {
         setIsAdmin(false);
       }
