@@ -5,7 +5,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Label } from '@/components/ui/label';
 import { useAuth } from '@/contexts/AuthContext';
-import { useOrganization } from '@/contexts/OrganizationContext';
 import { toast } from '@/hooks/use-toast';
 import { Loader2 } from 'lucide-react';
 
@@ -14,7 +13,6 @@ export const AuthPage = () => {
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const { signIn, signUp } = useAuth();
-  const { organization } = useOrganization();
 
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -60,8 +58,14 @@ export const AuthPage = () => {
     setIsLoading(false);
   };
 
-  const adminEmail = organization?.code === 'SATGURU' ? 'info@satguruengravures.com' : 'info@dkenterprises.co.in';
-  const organizationName = organization?.name || 'Multi-Tenant ERP System';
+  // Determine placeholder based on email domain
+  const getPlaceholderEmail = () => {
+    if (email.includes('@satguruengravures.com')) return 'info@satguruengravures.com';
+    if (email.includes('@dkenterprises.co.in')) return 'info@dkenterprises.co.in';
+    return 'admin@yourorganization.com';
+  };
+  
+  const organizationName = 'Multi-Tenant ERP System';
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
@@ -86,7 +90,7 @@ export const AuthPage = () => {
                   <Input
                     id="signin-email"
                     type="email"
-                    placeholder="info@dkenterprises.co.in"
+                    placeholder={getPlaceholderEmail()}
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     required
@@ -152,7 +156,9 @@ export const AuthPage = () => {
           </Tabs>
           
           <div className="mt-4 text-center text-sm text-muted-foreground">
-            Admin access: {adminEmail}
+            <div>Admin emails:</div>
+            <div>DK Enterprises: info@dkenterprises.co.in</div>
+            <div>Satguru Engravures: info@satguruengravures.com</div>
           </div>
         </CardContent>
       </Card>

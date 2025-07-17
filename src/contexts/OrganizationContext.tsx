@@ -42,64 +42,82 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
 
     try {
       setIsLoading(true);
+      console.log('Fetching organization for user ID:', user.id, 'Email:', user.email);
       
       // First, get the profile with organization_id
       const { data: profile, error: profileError } = await supabase
         .from('profiles')
-        .select('organization_id')
+        .select('organization_id, role, is_approved')
         .eq('id', user.id)
-        .single();
+        .maybeSingle();
 
       if (profileError) {
         console.error('Error fetching profile:', profileError);
-        
-        // If profile doesn't exist, try to create one based on email domain
-        if (profileError.code === 'PGRST116') { // No rows returned
-          console.log('Profile not found, attempting to create one...');
-          
-          // Determine organization based on email domain
-          const isSatguru = user.email?.includes('@satguruengravures.com');
-          const isDKEGL = user.email?.includes('@dkenterprises.co.in');
-          
-          if (isSatguru || isDKEGL) {
-            const orgCode = isSatguru ? 'SATGURU' : 'DKEGL';
-            
-            // Get organization ID
-            const { data: org } = await supabase
-              .from('organizations')
-              .select('id')
-              .eq('code', orgCode)
-              .single();
-            
-            if (org) {
-              // Create profile
-              const { error: createError } = await supabase
-                .from('profiles')
-                .insert({
-                  id: user.id,
-                  email: user.email,
-                  employee_id: `TEMP_${user.id.substring(0, 8)}`,
-                  organization_id: org.id,
-                  is_approved: isSatguru || isDKEGL,
-                  role: isSatguru || isDKEGL ? 'admin' : 'employee',
-                  full_name: user.user_metadata?.full_name || 'User'
-                });
-              
-              if (!createError) {
-                // Retry fetching after creation
-                setTimeout(() => fetchUserOrganization(), 1000);
-                return;
-              }
-            }
-          }
-        }
-        
         setIsLoading(false);
         return;
       }
 
+      if (!profile) {
+        // Profile doesn't exist, create one
+        console.log('Profile not found, attempting to create one...');
+        
+        // Determine organization based on email domain
+        const isSatguru = user.email?.includes('@satguruengravures.com');
+        const isDKEGL = user.email?.includes('@dkenterprises.co.in');
+        
+        if (isSatguru || isDKEGL) {
+          const orgCode = isSatguru ? 'SATGURU' : 'DKEGL';
+          console.log('Assigning user to organization:', orgCode);
+          
+          // Get organization ID
+          const { data: org, error: orgError } = await supabase
+            .from('organizations')
+            .select('id')
+            .eq('code', orgCode)
+            .single();
+          
+          if (orgError) {
+            console.error('Error fetching organization:', orgError);
+            setIsLoading(false);
+            return;
+          }
+          
+          if (org) {
+            // Create profile
+            const { error: insertError } = await supabase
+              .from('profiles')
+              .insert({
+                id: user.id,
+                email: user.email,
+                employee_id: `TEMP_${user.id.substring(0, 8)}`,
+                organization_id: org.id,
+                is_approved: true, // Auto-approve admin users
+                role: 'admin',
+                full_name: user.user_metadata?.full_name || 'Admin User'
+              });
+            
+            if (insertError) {
+              console.error('Error creating profile:', insertError);
+              setIsLoading(false);
+              return;
+            }
+            
+            console.log('Profile created successfully');
+            // Recursively call to fetch the newly created profile
+            fetchUserOrganization();
+            return;
+          }
+        } else {
+          console.error('User email not recognized for any organization');
+          setIsLoading(false);
+          return;
+        }
+      }
+
       // Now fetch the organization details separately
       if (profile?.organization_id) {
+        console.log('Fetching organization details for ID:', profile.organization_id);
+        
         const { data: organization, error: orgError } = await supabase
           .from('organizations')
           .select('*')
@@ -109,19 +127,29 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
         if (orgError) {
           console.error('Error fetching organization:', orgError);
         } else {
+          console.log('Organization loaded successfully:', organization.name, organization.code);
           setOrganization(organization);
         }
+      } else {
+        console.error('Profile exists but no organization_id found');
       }
 
     } catch (error) {
-      console.error('Error fetching user organization:', error);
+      console.error('Unexpected error in fetchUserOrganization:', error);
     } finally {
       setIsLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchUserOrganization();
+    if (user?.email) {
+      console.log('Loading organization for user:', user.email);
+      fetchUserOrganization();
+    } else {
+      console.log('No authenticated user, clearing organization');
+      setOrganization(null);
+      setIsLoading(false);
+    }
   }, [user]);
 
   const switchOrganization = async (orgId: string) => {
