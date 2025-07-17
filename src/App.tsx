@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/layout/AppSidebar";
 import { AuthProvider } from "@/contexts/AuthContext";
+import { OrganizationProvider } from "@/contexts/OrganizationContext";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import Dashboard from "./pages/Dashboard";
 import ItemMaster from "./pages/ItemMaster";
@@ -26,18 +27,19 @@ const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
       <AuthProvider>
-        <Toaster />
-        <Sonner />
-        <BrowserRouter>
-          <ProtectedRoute>
-            <SidebarProvider>
-              <div className="min-h-screen flex w-full">
-                <AppSidebar />
-                <main className="flex-1">
-                  <header className="h-12 flex items-center border-b px-4">
-                    <SidebarTrigger />
-                    <h2 className="ml-4 font-semibold">ERP Management System</h2>
-                  </header>
+        <OrganizationProvider>
+          <Toaster />
+          <Sonner />
+          <BrowserRouter>
+            <ProtectedRoute>
+              <SidebarProvider>
+                <div className="min-h-screen flex w-full">
+                  <AppSidebar />
+                  <main className="flex-1">
+                    <header className="h-12 flex items-center border-b px-4">
+                      <SidebarTrigger />
+                      <h2 className="ml-4 font-semibold">ERP Management System</h2>
+                    </header>
                   <Routes>
                     <Route path="/" element={<Dashboard />} />
                     <Route path="/items" element={<ItemMaster />} />
@@ -58,6 +60,7 @@ const App = () => (
             </SidebarProvider>
           </ProtectedRoute>
         </BrowserRouter>
+        </OrganizationProvider>
       </AuthProvider>
     </TooltipProvider>
   </QueryClientProvider>

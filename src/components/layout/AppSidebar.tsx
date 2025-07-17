@@ -1,5 +1,6 @@
 import { useState } from "react"
 import { NavLink, useLocation } from "react-router-dom"
+import { useOrganization } from "@/contexts/OrganizationContext"
 import {
   LayoutDashboard,
   Package,
@@ -56,6 +57,7 @@ const settingsItems = [
 export function AppSidebar() {
   const { state } = useSidebar()
   const { user, isAdmin, signOut } = useAuth()
+  const { organization, isLoading } = useOrganization()
   const location = useLocation()
   const currentPath = location.pathname
   const collapsed = state === "collapsed"
@@ -73,7 +75,9 @@ export function AppSidebar() {
 
       <SidebarContent>
         <SidebarGroup>
-          <SidebarGroupLabel>ERP System</SidebarGroupLabel>
+          <SidebarGroupLabel>
+            {isLoading ? "Loading..." : organization?.name || "ERP System"}
+          </SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               {mainItems.map((item) => (
