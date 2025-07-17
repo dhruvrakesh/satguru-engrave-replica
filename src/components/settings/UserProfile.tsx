@@ -57,13 +57,13 @@ export const UserProfile = () => {
 
     setLoading(true);
     try {
-      const { error } = await supabase
-        .from("profiles")
-        .upsert({
-          id: user.id,
-          full_name: profile.full_name,
-          updated_at: new Date().toISOString(),
-        });
+    const { error } = await supabase
+      .from("profiles")
+      .update({
+        full_name: profile.full_name,
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', user.id);
 
       if (error) throw error;
 

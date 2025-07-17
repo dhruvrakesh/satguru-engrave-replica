@@ -1145,6 +1145,33 @@ export type Database = {
         }
         Relationships: []
       }
+      daily_stock_snapshots: {
+        Row: {
+          created_at: string | null
+          id: string
+          metadata: Json | null
+          record_count: number
+          snapshot_data: Json
+          snapshot_date: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          metadata?: Json | null
+          record_count?: number
+          snapshot_data: Json
+          snapshot_date?: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          metadata?: Json | null
+          record_count?: number
+          snapshot_data?: Json
+          snapshot_date?: string
+        }
+        Relationships: []
+      }
       daily_stock_summary: {
         Row: {
           closing_qty: number | null
@@ -2008,6 +2035,8 @@ export type Database = {
           item_code: string
           item_name: string
           no_of_colours: string | null
+          status: string | null
+          uom: string | null
           updated_at: string | null
         }
         Insert: {
@@ -2022,6 +2051,8 @@ export type Database = {
           item_code: string
           item_name: string
           no_of_colours?: string | null
+          status?: string | null
+          uom?: string | null
           updated_at?: string | null
         }
         Update: {
@@ -2036,6 +2067,8 @@ export type Database = {
           item_code?: string
           item_name?: string
           no_of_colours?: string | null
+          status?: string | null
+          uom?: string | null
           updated_at?: string | null
         }
         Relationships: [

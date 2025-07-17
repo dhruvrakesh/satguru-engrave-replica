@@ -62,8 +62,9 @@ export const useOrganizationData = () => {
     },
 
     // Generic query method for raw SQL/RPC calls
-    executeQuery: (query: string, params?: any) => {
-      return supabase.rpc('execute_sql', { sql: query, params });
+    executeQuery: async (query: string, params?: any) => {
+      // For now, return a simple error since execute_sql doesn't exist
+      throw new Error('Direct SQL execution not available');
     },
 
     // Insert operations

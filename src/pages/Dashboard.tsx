@@ -11,37 +11,43 @@ const Dashboard = () => {
 
   const { data: stockSummary } = useQuery({
     queryKey: ['organization-stock-summary'],
-    queryFn: getStockSummary
+    queryFn: async () => {
+      const response = await getStockSummary();
+      return response?.data || [];
+    }
   })
 
   const { data: recentGRNs } = useQuery({
     queryKey: ['organization-recent-grns'],
     queryFn: async () => {
-      const data = await getGRNLog();
-      return data?.slice(0, 5) || [];
+      const response = await getGRNLog();
+      return response?.data?.slice(0, 5) || [];
     }
   })
 
   const { data: recentIssues } = useQuery({
     queryKey: ['organization-recent-issues'],
     queryFn: async () => {
-      const data = await getIssueLog();
-      return data?.slice(0, 5) || [];
+      const response = await getIssueLog();
+      return response?.data?.slice(0, 5) || [];
     }
   })
 
   const { data: stockMovements } = useQuery({
     queryKey: ['organization-stock-movements'],
     queryFn: async () => {
-      const [grnData, issueData] = await Promise.all([
+      const [grnResponse, issueResponse] = await Promise.all([
         getGRNLog(),
         getIssueLog()
       ]);
       
+      const grnData = grnResponse?.data || [];
+      const issueData = issueResponse?.data || [];
+      
       // Group by date and sum quantities
       const movementMap = new Map()
       
-      grnData?.slice(0, 30).forEach(item => {
+      grnData.slice(0, 30).forEach(item => {
         const date = item.grn_date || item.date
         if (!movementMap.has(date)) {
           movementMap.set(date, { date, grn: 0, issues: 0 })
@@ -49,7 +55,7 @@ const Dashboard = () => {
         movementMap.get(date).grn += item.qty_received || 0
       })
       
-      issueData?.slice(0, 30).forEach(item => {
+      issueData.slice(0, 30).forEach(item => {
         const date = item.issue_date || item.date
         if (!movementMap.has(date)) {
           movementMap.set(date, { date, grn: 0, issues: 0 })
@@ -61,17 +67,19 @@ const Dashboard = () => {
     }
   })
 
-  const totalItems = stockSummary?.length || 0
-  const lowStockItems = stockSummary?.filter(item => (item.current_qty || 0) < 10).length || 0
-  const totalValue = stockSummary?.reduce((sum, item) => sum + (item.current_qty || 0), 0) || 0
+  const safeStockSummary = (stockSummary || []).filter(item => item && typeof item === 'object') as any[];
+  
+  const totalItems = safeStockSummary.length
+  const lowStockItems = safeStockSummary.filter(item => (item?.current_qty || 0) < 10).length
+  const totalValue = safeStockSummary.reduce((sum, item) => sum + (item?.current_qty || 0), 0)
 
   // Process data for charts
-  const categoryData = stockSummary?.reduce((acc, item) => {
-    const category = item.category_name || 'Uncategorized'
+  const categoryData = safeStockSummary.reduce((acc, item) => {
+    const category = item?.category_name || item?.categories?.category_name || 'Uncategorized'
     if (!acc[category]) {
       acc[category] = { name: category, value: 0, items: 0 }
     }
-    acc[category].value += item.current_qty || 0
+    acc[category].value += item?.current_qty || 0
     acc[category].items += 1
     return acc
   }, {} as Record<string, { name: string; value: number; items: number }>)
@@ -79,10 +87,10 @@ const Dashboard = () => {
   const categoryChartData = Object.values(categoryData || {})
   
   const stockLevelDistribution = [
-    { name: 'High Stock (100+)', value: stockSummary?.filter(item => (item.current_qty || 0) >= 100).length || 0, color: '#10B981' },
-    { name: 'Medium Stock (10-99)', value: stockSummary?.filter(item => (item.current_qty || 0) >= 10 && (item.current_qty || 0) < 100).length || 0, color: '#F59E0B' },
-    { name: 'Low Stock (<10)', value: stockSummary?.filter(item => (item.current_qty || 0) < 10).length || 0, color: '#EF4444' },
-    { name: 'Zero Stock', value: stockSummary?.filter(item => (item.current_qty || 0) === 0).length || 0, color: '#6B7280' }
+    { name: 'High Stock (100+)', value: safeStockSummary.filter(item => (item?.current_qty || 0) >= 100).length, color: '#10B981' },
+    { name: 'Medium Stock (10-99)', value: safeStockSummary.filter(item => (item?.current_qty || 0) >= 10 && (item?.current_qty || 0) < 100).length, color: '#F59E0B' },
+    { name: 'Low Stock (<10)', value: safeStockSummary.filter(item => (item?.current_qty || 0) < 10).length, color: '#EF4444' },
+    { name: 'Zero Stock', value: safeStockSummary.filter(item => (item?.current_qty || 0) === 0).length, color: '#6B7280' }
   ]
 
   const chartConfig = {
@@ -262,15 +270,15 @@ const Dashboard = () => {
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
-              {stockSummary?.slice(0, 10).map((item) => (
-                <div key={item.item_code} className="flex items-center justify-between p-2 border rounded">
+              {safeStockSummary.slice(0, 10).map((item, index) => (
+                <div key={item?.item_code || index} className="flex items-center justify-between p-2 border rounded">
                   <div>
-                    <p className="font-medium">{item.item_name}</p>
-                    <p className="text-sm text-muted-foreground">Code: {item.item_code}</p>
+                    <p className="font-medium">{item?.item_name || item?.item_master?.item_name || 'Unknown Item'}</p>
+                    <p className="text-sm text-muted-foreground">Code: {item?.item_code || 'N/A'}</p>
                   </div>
                   <div className="text-right space-y-1">
-                    <p className="font-mono">{item.current_qty || 0}</p>
-                    {getDaysOfCoverBadge(item.days_of_cover)}
+                    <p className="font-mono">{item?.current_qty || 0}</p>
+                    {getDaysOfCoverBadge(item?.days_of_cover)}
                   </div>
                 </div>
               ))}
