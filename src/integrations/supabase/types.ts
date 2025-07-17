@@ -3956,21 +3956,30 @@ export type Database = {
           id: string
           item_code: string
           last_updated: string
+          max_stock_level: number | null
+          min_stock_level: number | null
           opening_qty: number
+          reorder_level: number | null
         }
         Insert: {
           current_qty?: number
           id?: string
           item_code: string
           last_updated?: string
+          max_stock_level?: number | null
+          min_stock_level?: number | null
           opening_qty?: number
+          reorder_level?: number | null
         }
         Update: {
           current_qty?: number
           id?: string
           item_code?: string
           last_updated?: string
+          max_stock_level?: number | null
+          min_stock_level?: number | null
           opening_qty?: number
+          reorder_level?: number | null
         }
         Relationships: [
           {
