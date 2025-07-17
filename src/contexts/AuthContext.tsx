@@ -30,8 +30,26 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const checkAdminRole = async (userEmail: string | undefined) => {
     try {
-      // Use the updated admin check function that supports both organizations
-      setIsAdmin(userEmail === 'info@dkenterprises.co.in' || userEmail === 'info@satguruengravures.com');
+      // Check if user is admin for either organization
+      const isOrgAdmin = userEmail === 'info@dkenterprises.co.in' || userEmail === 'info@satguruengravures.com';
+      
+      if (isOrgAdmin) {
+        setIsAdmin(true);
+        return;
+      }
+      
+      // Also check database role for other users
+      if (userEmail) {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('role')
+          .eq('email', userEmail)
+          .single();
+        
+        setIsAdmin(profile?.role === 'admin');
+      } else {
+        setIsAdmin(false);
+      }
     } catch (error) {
       console.error('Error checking admin role:', error);
       setIsAdmin(false);

@@ -41,7 +41,7 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
     }
 
     try {
-      const { data: profile } = await supabase
+      const { data: profile, error: profileError } = await supabase
         .from('profiles')
         .select(`
           organization_id,
@@ -49,6 +49,54 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
         `)
         .eq('id', user.id)
         .single();
+
+      if (profileError) {
+        console.error('Error fetching profile:', profileError);
+        
+        // If profile doesn't exist, try to create one based on email domain
+        if (profileError.code === 'PGRST116') { // No rows returned
+          console.log('Profile not found, attempting to create one...');
+          
+          // Determine organization based on email domain
+          const isStanguru = user.email?.includes('@satguruengravures.com');
+          const isDKEGL = user.email?.includes('@dkenterprises.co.in');
+          
+          if (isStanguru || isDKEGL) {
+            const orgCode = isStanguru ? 'SATGURU' : 'DKEGL';
+            
+            // Get organization ID
+            const { data: org } = await supabase
+              .from('organizations')
+              .select('id')
+              .eq('code', orgCode)
+              .single();
+            
+            if (org) {
+              // Create profile
+              const { error: createError } = await supabase
+                .from('profiles')
+                .insert({
+                  id: user.id,
+                  email: user.email,
+                  employee_id: `TEMP_${user.id.substring(0, 8)}`,
+                  organization_id: org.id,
+                  is_approved: isStanguru || isDKEGL,
+                  role: isStanguru || isDKEGL ? 'admin' : 'employee',
+                  full_name: user.user_metadata?.full_name || 'User'
+                });
+              
+              if (!createError) {
+                // Retry fetching after creation
+                setTimeout(() => fetchUserOrganization(), 1000);
+                return;
+              }
+            }
+          }
+        }
+        
+        setIsLoading(false);
+        return;
+      }
 
       if (profile?.organizations) {
         setOrganization(profile.organizations as Organization);
