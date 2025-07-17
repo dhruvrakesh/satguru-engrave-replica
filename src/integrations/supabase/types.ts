@@ -1076,6 +1076,48 @@ export type Database = {
         }
         Relationships: []
       }
+      csv_upload_log: {
+        Row: {
+          created_at: string
+          error_details: Json | null
+          failed_rows: number
+          file_name: string
+          id: string
+          successful_rows: number
+          total_rows: number
+          updated_at: string
+          upload_date: string
+          upload_type: string
+          uploaded_by: string | null
+        }
+        Insert: {
+          created_at?: string
+          error_details?: Json | null
+          failed_rows?: number
+          file_name: string
+          id?: string
+          successful_rows?: number
+          total_rows?: number
+          updated_at?: string
+          upload_date?: string
+          upload_type: string
+          uploaded_by?: string | null
+        }
+        Update: {
+          created_at?: string
+          error_details?: Json | null
+          failed_rows?: number
+          file_name?: string
+          id?: string
+          successful_rows?: number
+          total_rows?: number
+          updated_at?: string
+          upload_date?: string
+          upload_type?: string
+          uploaded_by?: string | null
+        }
+        Relationships: []
+      }
       deck_viscosity_readings: {
         Row: {
           captured_at: string
@@ -3375,6 +3417,48 @@ export type Database = {
           description?: string | null
           id?: string
           updated_at?: string
+        }
+        Relationships: []
+      }
+      satguru_csv_upload_log: {
+        Row: {
+          created_at: string
+          error_details: Json | null
+          failed_rows: number
+          file_name: string
+          id: string
+          successful_rows: number
+          total_rows: number
+          updated_at: string
+          upload_date: string
+          upload_type: string
+          uploaded_by: string | null
+        }
+        Insert: {
+          created_at?: string
+          error_details?: Json | null
+          failed_rows?: number
+          file_name: string
+          id?: string
+          successful_rows?: number
+          total_rows?: number
+          updated_at?: string
+          upload_date?: string
+          upload_type: string
+          uploaded_by?: string | null
+        }
+        Update: {
+          created_at?: string
+          error_details?: Json | null
+          failed_rows?: number
+          file_name?: string
+          id?: string
+          successful_rows?: number
+          total_rows?: number
+          updated_at?: string
+          upload_date?: string
+          upload_type?: string
+          uploaded_by?: string | null
         }
         Relationships: []
       }

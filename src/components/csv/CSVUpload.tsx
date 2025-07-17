@@ -9,6 +9,7 @@ import { Progress } from '@/components/ui/progress';
 import { toast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { Upload, AlertTriangle, CheckCircle, X } from 'lucide-react';
+import { useOrganizationData } from '@/hooks/useOrganizationData';
 
 interface CSVData {
   headers: string[];
@@ -37,6 +38,7 @@ export const CSVUpload: React.FC<CSVUploadProps> = ({
     errors: any[];
     total: number;
   } | null>(null);
+  const { getTableName } = useOrganizationData();
 
   const parseCSV = (text: string): CSVData => {
     const lines = text.split('\n').filter(line => line.trim());
@@ -131,7 +133,7 @@ export const CSVUpload: React.FC<CSVUploadProps> = ({
       // Log the upload
       const { data: userData } = await supabase.auth.getUser();
       if (userData.user) {
-        await supabase.from('csv_upload_log').insert({
+        await supabase.from(getTableName('csv_upload_log')).insert({
           user_id: userData.user.id,
           file_name: file.name,
           file_type: 'opening_stock',

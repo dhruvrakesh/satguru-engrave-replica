@@ -11,6 +11,7 @@ import { toast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { Upload, Download, AlertTriangle, CheckCircle, X, FileText, AlertCircle } from 'lucide-react';
 import { downloadCSVTemplate } from '@/utils/templateGenerator';
+import { useOrganizationData } from '@/hooks/useOrganizationData';
 
 interface CSVData {
   headers: string[];
@@ -41,6 +42,7 @@ export const GRNCSVUpload: React.FC<GRNCSVUploadProps> = ({
     errors: any[];
     total: number;
   } | null>(null);
+  const { getItems, getGRNLog, insertGRN, getTableName } = useOrganizationData();
 
   const requiredHeaders = ['grn_number', 'date', 'item_code', 'qty_received', 'uom'];
   const optionalHeaders = ['invoice_number', 'amount_inr', 'vendor', 'remarks'];
@@ -155,27 +157,28 @@ export const GRNCSVUpload: React.FC<GRNCSVUploadProps> = ({
     const itemCodes = [...new Set(dataObjects.map(row => row.item_code))];
     
     // Check if all item codes exist
-    const { data: existingItems, error } = await supabase
-      .from('item_master')
-      .select('item_code, item_name, uom')
-      .in('item_code', itemCodes);
+    const { data: existingItems, error } = await getItems();
     
     if (error) {
       throw error;
     }
 
-    const existingItemCodes = new Set(existingItems?.map(item => item.item_code) || []);
-    
-    dataObjects.forEach((row, index) => {
-      if (!existingItemCodes.has(row.item_code)) {
-        errors.push({
-          row: index + 2,
-          field: 'item_code',
-          message: `Item code '${row.item_code}' does not exist in item master`,
-          data: row
-        });
-      }
-    });
+    if (!error && existingItems) {
+      const existingItemCodes = new Set(existingItems.filter(item => 
+        itemCodes.includes(item.item_code)
+      ).map(item => item.item_code));
+      
+      dataObjects.forEach((row, index) => {
+        if (!existingItemCodes.has(row.item_code)) {
+          errors.push({
+            row: index + 2,
+            field: 'item_code',
+            message: `Item code '${row.item_code}' does not exist in item master`,
+            data: row
+          });
+        }
+      });
+    }
 
     return errors;
   };
@@ -199,30 +202,31 @@ export const GRNCSVUpload: React.FC<GRNCSVUploadProps> = ({
     });
 
     // Check for duplicates in database (grn_number + item_code combination)
-    const { data: existingGRNs, error } = await supabase
-      .from('grn_log')
-      .select('grn_number, item_code')
-      .in('grn_number', [...new Set(dataObjects.map(row => row.grn_number))]);
+    const { data: existingGRNs, error } = await getGRNLog();
     
     if (error) {
       throw error;
     }
 
-    const existingGRNItemCombinations = new Set(
-      existingGRNs?.map(grn => `${grn.grn_number}|${grn.item_code}`) || []
-    );
-    
-    dataObjects.forEach((row, index) => {
-      const grnItemKey = `${row.grn_number}|${row.item_code}`;
-      if (existingGRNItemCombinations.has(grnItemKey)) {
-        errors.push({
-          row: index + 2,
-          field: 'grn_number',
-          message: `GRN number '${row.grn_number}' with item code '${row.item_code}' already exists in database`,
-          data: row
-        });
-      }
-    });
+    if (!error && existingGRNs) {
+      const grnNumbers = [...new Set(dataObjects.map(row => row.grn_number))];
+      const filteredGRNs = existingGRNs.filter(grn => grnNumbers.includes(grn.grn_number));
+      const existingGRNItemCombinations = new Set(
+        filteredGRNs.map(grn => `${grn.grn_number}|${grn.item_code}`)
+      );
+      
+      dataObjects.forEach((row, index) => {
+        const grnItemKey = `${row.grn_number}|${row.item_code}`;
+        if (existingGRNItemCombinations.has(grnItemKey)) {
+          errors.push({
+            row: index + 2,
+            field: 'grn_number',
+            message: `GRN number '${row.grn_number}' with item code '${row.item_code}' already exists in database`,
+            data: row
+          });
+        }
+      });
+    }
 
     return errors;
   };
@@ -348,9 +352,7 @@ export const GRNCSVUpload: React.FC<GRNCSVUploadProps> = ({
             };
 
             // Insert GRN record
-            const { error: insertError } = await supabase
-              .from('grn_log')
-              .insert(grnData);
+            const { error: insertError } = await insertGRN(grnData);
 
             if (insertError) {
               allErrors.push({
@@ -375,7 +377,7 @@ export const GRNCSVUpload: React.FC<GRNCSVUploadProps> = ({
 
       // Log the upload
       try {
-        await supabase.from('csv_upload_log').insert({
+        await supabase.from(getTableName('csv_upload_log')).insert({
           user_id: (await supabase.auth.getUser()).data.user?.id,
           file_name: file.name,
           file_type: 'grn',

@@ -3,8 +3,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Check, X, Edit } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useOrganizationData } from '@/hooks/useOrganizationData';
 
 interface ItemMasterInlineEditorProps {
   item: any;
@@ -31,24 +31,23 @@ export const ItemMasterInlineEditor: React.FC<ItemMasterInlineEditorProps> = ({
     setEditedItem(prev => ({ ...prev, [field]: value }));
   };
 
+  const { updateItem } = useOrganizationData();
+
   const handleSave = async () => {
     setIsSaving(true);
     try {
       // Update the item in the database
-      const { error } = await supabase
-        .from('item_master')
-        .update({
-          item_name: editedItem.item_name,
-          category_id: editedItem.category_id,
-          qualifier: editedItem.qualifier || null,
-          gsm: editedItem.gsm || null,
-          size_mm: editedItem.size_mm || null,
-          uom: editedItem.uom,
-          usage_type: editedItem.usage_type || null,
-          status: editedItem.status,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', item.id);
+      const { error } = await updateItem(item.id, {
+        item_name: editedItem.item_name,
+        category_id: editedItem.category_id,
+        qualifier: editedItem.qualifier || null,
+        gsm: editedItem.gsm || null,
+        size_mm: editedItem.size_mm || null,
+        uom: editedItem.uom,
+        usage_type: editedItem.usage_type || null,
+        status: editedItem.status,
+        updated_at: new Date().toISOString()
+      });
 
       if (error) throw error;
 

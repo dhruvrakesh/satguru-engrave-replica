@@ -62,9 +62,9 @@ export const AuthPage = () => {
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
-          <CardTitle className="text-2xl font-bold">DK Enterprises ERP</CardTitle>
+          <CardTitle className="text-2xl font-bold">Multi-Tenant ERP System</CardTitle>
           <CardDescription>
-            Sign in to access your inventory management system
+            Sign in to access your organization's inventory management system
           </CardDescription>
         </CardHeader>
         <CardContent>
