@@ -41,12 +41,12 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
     }
 
     try {
+      setIsLoading(true);
+      
+      // First, get the profile with organization_id
       const { data: profile, error: profileError } = await supabase
         .from('profiles')
-        .select(`
-          organization_id,
-          organizations!inner(*)
-        `)
+        .select('organization_id')
         .eq('id', user.id)
         .single();
 
@@ -58,11 +58,11 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
           console.log('Profile not found, attempting to create one...');
           
           // Determine organization based on email domain
-          const isStanguru = user.email?.includes('@satguruengravures.com');
+          const isSatguru = user.email?.includes('@satguruengravures.com');
           const isDKEGL = user.email?.includes('@dkenterprises.co.in');
           
-          if (isStanguru || isDKEGL) {
-            const orgCode = isStanguru ? 'SATGURU' : 'DKEGL';
+          if (isSatguru || isDKEGL) {
+            const orgCode = isSatguru ? 'SATGURU' : 'DKEGL';
             
             // Get organization ID
             const { data: org } = await supabase
@@ -80,8 +80,8 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
                   email: user.email,
                   employee_id: `TEMP_${user.id.substring(0, 8)}`,
                   organization_id: org.id,
-                  is_approved: isStanguru || isDKEGL,
-                  role: isStanguru || isDKEGL ? 'admin' : 'employee',
+                  is_approved: isSatguru || isDKEGL,
+                  role: isSatguru || isDKEGL ? 'admin' : 'employee',
                   full_name: user.user_metadata?.full_name || 'User'
                 });
               
@@ -98,9 +98,21 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
         return;
       }
 
-      if (profile?.organizations) {
-        setOrganization(profile.organizations as Organization);
+      // Now fetch the organization details separately
+      if (profile?.organization_id) {
+        const { data: organization, error: orgError } = await supabase
+          .from('organizations')
+          .select('*')
+          .eq('id', profile.organization_id)
+          .single();
+
+        if (orgError) {
+          console.error('Error fetching organization:', orgError);
+        } else {
+          setOrganization(organization);
+        }
       }
+
     } catch (error) {
       console.error('Error fetching user organization:', error);
     } finally {

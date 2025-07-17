@@ -4833,6 +4833,7 @@ export type Database = {
           p_progress?: number
           p_result_url?: string
           p_error_message?: string
+          p_job_type?: string
         }
         Returns: undefined
       }
